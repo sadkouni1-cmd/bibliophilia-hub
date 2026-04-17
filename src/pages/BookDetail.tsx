@@ -89,21 +89,41 @@ const BookDetail = () => {
   const lang = languages.find((l) => l.id === book.language);
   const speechLang = speechLangByBook[book.language];
 
+  const selectedVoice = useMemo(() => {
+    if (!voices.length) return null;
+    const langPrefix = speechLang.split("-")[0];
+    const langVoices = voices.filter((v) => v.lang?.toLowerCase().startsWith(langPrefix));
+    if (book.language === "ar") {
+      const narrator = arabicNarrators.find((n) => n.id === narratorId);
+      if (narrator?.hints.length) {
+        const matched = langVoices.find((v) =>
+          narrator.hints.some((h) => v.name.toLowerCase().includes(h.toLowerCase()) || v.lang.toLowerCase().includes(h.toLowerCase()))
+        );
+        if (matched) return matched;
+      }
+      return langVoices[0] ?? voices[0];
+    }
+    return langVoices[0] ?? voices[0];
+  }, [voices, narratorId, book.language, speechLang]);
+
+  const buildUtterance = (text: string) => {
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = speechLang;
+    u.rate = speechRate;
+    u.pitch = 1;
+    u.volume = 1;
+    if (selectedVoice) u.voice = selectedVoice;
+    return u;
+  };
+
   const speakPage = (pageIndex: number) => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-
     const pageText = book.pages[pageIndex] ?? book.description;
     if (!pageText) {
       stopNarration(false);
       return;
     }
-
-    const utterance = new SpeechSynthesisUtterance(pageText);
-    utterance.lang = speechLang;
-    utterance.rate = speechRate;
-    utterance.pitch = 1;
-    utterance.volume = 1;
-
+    const utterance = buildUtterance(pageText);
     utterance.onend = () => {
       if (!speechActiveRef.current) return;
       const nextIndex = pageIndex + 1;
@@ -115,13 +135,7 @@ const BookDetail = () => {
       setNarrationPage(nextIndex + 1);
       speakPage(nextIndex);
     };
-
-    utterance.onerror = () => {
-      stopNarration(false);
-    };
-
-    utteranceRef.current = utterance;
-    window.speechSynthesis.cancel();
+    utterance.onerror = () => stopNarration(false);
     window.speechSynthesis.speak(utterance);
   };
 
@@ -133,7 +147,6 @@ const BookDetail = () => {
       setPaused(true);
       return;
     }
-
     if (paused) {
       window.speechSynthesis.resume();
       setPaused(false);
@@ -141,36 +154,12 @@ const BookDetail = () => {
     }
 
     const startIndex = narrationPageRef.current;
-    const utterance = new SpeechSynthesisUtterance();
-    utterance.lang = speechLang;
-    utterance.rate = speechRate;
-    utterance.pitch = 1;
-    utterance.volume = 1;
-    utterance.text = book.pages[startIndex] ?? book.description;
-
-    utterance.onend = () => {
-      if (!speechActiveRef.current) return;
-      const nextIndex = startIndex + 1;
-      if (nextIndex >= book.pages.length) {
-        stopNarration(false);
-        return;
-      }
-      narrationPageRef.current = nextIndex;
-      setNarrationPage(nextIndex + 1);
-      speakPage(nextIndex);
-    };
-
-    utterance.onerror = () => {
-      stopNarration(false);
-    };
-
     speechActiveRef.current = true;
-    utteranceRef.current = utterance;
     setPlaying(true);
     setPaused(false);
     setNarrationPage(startIndex + 1);
     window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
+    speakPage(startIndex);
   };
 
 
