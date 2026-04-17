@@ -11,8 +11,8 @@ export const Header = ({ onSearch, search }: { onSearch?: (v: string) => void; s
             <BookOpen className="h-5 w-5 text-primary" />
           </div>
           <div className="flex flex-col leading-none">
-            <span className="font-display text-2xl font-semibold text-primary">Maktaba</span>
-            <span className="text-[10px] text-muted-foreground tracking-widest uppercase">Library of Souls</span>
+            <span className="font-display text-2xl font-semibold text-primary">Read With Bob</span>
+            <span className="text-[10px] text-muted-foreground tracking-widest uppercase">by Ayoub Sadkouni</span>
           </div>
         </Link>
         {onSearch && (
