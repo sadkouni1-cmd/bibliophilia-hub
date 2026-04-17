@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Star, Play, Pause, BookOpen } from "lucide-react";
+import { ArrowLeft, Star, Play, Pause, BookOpen, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/Header";
 import { BookReader } from "@/components/BookReader";
 import { getBook, languages } from "@/data/books";
+import { useFavorites } from "@/lib/library-storage";
 
 const speechLangByBook = {
   ar: "ar-SA",
@@ -16,6 +17,7 @@ const speechLangByBook = {
 const BookDetail = () => {
   const { id } = useParams();
   const book = getBook(id ?? "");
+  const { isFavorite, toggleFavorite } = useFavorites();
   const [reading, setReading] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -205,6 +207,15 @@ const BookDetail = () => {
                   <BookOpen className="h-5 w-5 mr-2" />
                   اقرأ الكتاب
                 </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={() => toggleFavorite(book.id)}
+                  className="font-display text-base"
+                >
+                  <Heart className={`h-5 w-5 mr-2 ${isFavorite(book.id) ? "fill-primary text-primary" : ""}`} />
+                  {isFavorite(book.id) ? "في المفضلة" : "أضف للمفضلة"}
+                </Button>
               </div>
 
               {book.category === "audiobooks" && (
@@ -247,7 +258,7 @@ const BookDetail = () => {
               </div>
               <Button variant="outline" onClick={() => setReading(false)}>إغلاق الكتاب</Button>
             </div>
-            <BookReader pages={book.pages} isRTL={isRTL} />
+            <BookReader pages={book.pages} isRTL={isRTL} bookId={book.id} />
           </div>
         )}
       </div>

@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
-import { BookOpen, Search } from "lucide-react";
+import { BookOpen, Search, Library } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export const Header = ({ onSearch, search }: { onSearch?: (v: string) => void; search?: string }) => {
   return (
@@ -26,6 +27,12 @@ export const Header = ({ onSearch, search }: { onSearch?: (v: string) => void; s
             />
           </div>
         )}
+        <Button asChild variant="ghost" className={onSearch ? "" : "ml-auto"}>
+          <Link to="/my-books" className="flex items-center gap-2">
+            <Library className="h-4 w-4" />
+            <span className="font-display">كتبي</span>
+          </Link>
+        </Button>
       </div>
     </header>
   );

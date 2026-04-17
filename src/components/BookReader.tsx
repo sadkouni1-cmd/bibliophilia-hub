@@ -1,12 +1,21 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getProgress, saveProgress } from "@/lib/library-storage";
 
-export const BookReader = ({ pages, isRTL }: { pages: string[]; isRTL: boolean }) => {
-  const [spread, setSpread] = useState(0); // index of left page; right = left + 1
+export const BookReader = ({ pages, isRTL, bookId }: { pages: string[]; isRTL: boolean; bookId?: string }) => {
+  const totalSpreads = Math.ceil(pages.length / 2);
+  const [spread, setSpread] = useState(() => {
+    if (!bookId) return 0;
+    const saved = getProgress(bookId);
+    if (!saved) return 0;
+    return Math.min(saved.spread, Math.max(0, totalSpreads - 1));
+  });
   const [flipping, setFlipping] = useState<"next" | "prev" | null>(null);
 
-  const totalSpreads = Math.ceil(pages.length / 2);
+  useEffect(() => {
+    if (bookId) saveProgress(bookId, spread, totalSpreads);
+  }, [bookId, spread, totalSpreads]);
 
   const flip = (dir: "next" | "prev") => {
     if (flipping) return;
@@ -24,12 +33,8 @@ export const BookReader = ({ pages, isRTL }: { pages: string[]; isRTL: boolean }
 
   return (
     <div className="flex flex-col items-center gap-6">
-      <div
-        className="relative w-full max-w-5xl aspect-[16/10] [perspective:2500px]"
-        dir="ltr"
-      >
+      <div className="relative w-full max-w-5xl aspect-[16/10] [perspective:2500px]" dir="ltr">
         <div className="absolute inset-0 flex shadow-book rounded-lg overflow-hidden bg-gradient-page">
-          {/* Left page */}
           <div className="relative flex-1 paper-texture page-shadow p-8 md:p-12 overflow-hidden border-r border-border/40">
             <div className={`h-full w-full ${isRTL ? "text-right font-arabic" : "text-left"} text-foreground/90 leading-relaxed whitespace-pre-line text-sm md:text-base`}>
               {left}
@@ -38,7 +43,6 @@ export const BookReader = ({ pages, isRTL }: { pages: string[]; isRTL: boolean }
               {spread * 2 + 1}
             </div>
           </div>
-          {/* Right page */}
           <div className="relative flex-1 paper-texture page-shadow p-8 md:p-12 overflow-hidden">
             <div className={`h-full w-full ${isRTL ? "text-right font-arabic" : "text-left"} text-foreground/90 leading-relaxed whitespace-pre-line text-sm md:text-base`}>
               {right}
@@ -47,15 +51,13 @@ export const BookReader = ({ pages, isRTL }: { pages: string[]; isRTL: boolean }
               {spread * 2 + 2}
             </div>
           </div>
-          {/* Center binding */}
           <div className="absolute left-1/2 top-0 bottom-0 -translate-x-1/2 w-6 bg-gradient-to-r from-foreground/15 via-foreground/30 to-foreground/15 pointer-events-none" />
 
-          {/* Flipping page overlay */}
           {flipping && (
             <div
               className={`absolute top-0 ${flipping === "next" ? "right-0 origin-left" : "left-0 origin-right"} h-full w-1/2 bg-gradient-page paper-texture page-shadow`}
               style={{
-                animation: `${flipping === "next" ? "page-flip" : "page-flip"} 0.5s forwards`,
+                animation: `page-flip 0.5s forwards`,
                 transformStyle: "preserve-3d",
                 boxShadow: "0 0 30px hsl(24 40% 14% / 0.4)",
               }}
