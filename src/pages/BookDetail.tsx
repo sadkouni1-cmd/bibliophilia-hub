@@ -257,6 +257,28 @@ const BookDetail = () => {
                       ))}
                     </div>
                   </div>
+                  {book.language === "ar" && (
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                      <span className="text-xs text-muted-foreground">القارئ</span>
+                      {arabicNarrators.map((n) => (
+                        <button
+                          key={n.id}
+                          onClick={() => {
+                            setNarratorId(n.id);
+                            if (playing || paused) stopNarration(false);
+                          }}
+                          className={`rounded-full border px-3 py-1 text-xs transition-smooth font-arabic ${narratorId === n.id ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
+                        >
+                          {n.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {selectedVoice && (
+                    <p className="mt-2 text-[11px] text-muted-foreground">
+                      الصوت الحالي: {selectedVoice.name} ({selectedVoice.lang})
+                    </p>
+                  )}
                   <div className="mt-4 h-1.5 bg-secondary rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gradient-gold transition-all duration-500"
