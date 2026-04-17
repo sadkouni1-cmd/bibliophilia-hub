@@ -98,8 +98,8 @@ const Index = () => {
       </main>
 
       <footer className="border-t border-border/60 mt-20 py-10 text-center text-sm text-muted-foreground">
-        <p className="font-display text-lg text-primary">Maktaba — مكتبة الأرواح</p>
-        <p className="mt-2">صُنعت بحب للقراء حول العالم · Made with love for readers everywhere</p>
+        <p className="font-display text-2xl text-primary">Read With Bob</p>
+        <p className="mt-2">صُنعت بحب للقراء حول العالم — Developed by <span className="text-foreground font-medium">Ayoub Sadkouni</span></p>
       </footer>
     </div>
   );
