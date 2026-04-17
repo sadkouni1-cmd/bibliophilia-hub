@@ -83,16 +83,16 @@ const BookDetail = () => {
     const langVoices = voices.filter((v) => v.lang?.toLowerCase().startsWith(langPrefix));
     if (bookLanguage === "ar") {
       const narrator = arabicNarrators.find((n) => n.id === narratorId);
-      if (narrator && narrator.hints.length > 0) {
-        const matched = langVoices.find((v) =>
-          narrator.hints.some(
-            (h) =>
-              v.name.toLowerCase().includes(h.toLowerCase()) ||
-              v.lang.toLowerCase().includes(h.toLowerCase())
-          )
-        );
-        if (matched) return matched;
-      }
+      if (!narrator) return null;
+      const matched = langVoices.find((v) =>
+        narrator.hints.some(
+          (h) =>
+            v.name.toLowerCase().includes(h.toLowerCase()) ||
+            v.lang.toLowerCase().includes(h.toLowerCase())
+        )
+      );
+      // Strict mode: only the matched narrator voice is allowed; never fall back to default.
+      return matched ?? null;
     }
     return langVoices[0] ?? voices[0];
   }, [voices, narratorId, bookLanguage, speechLang]);
