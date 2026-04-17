@@ -218,6 +218,7 @@ const BookDetail = () => {
                       {playing ? (paused ? "متابعة" : "إيقاف مؤقت") : "استمع الآن"}
                     </Button>
                     <Button size="lg" variant="outline" onClick={() => stopNarration(true)} disabled={!playing && !paused} className="font-display text-base">
+                      <Square className="h-5 w-5 mr-2" />
                       إيقاف كامل
                     </Button>
                   </>
