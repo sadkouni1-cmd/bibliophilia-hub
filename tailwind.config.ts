@@ -63,27 +63,43 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      fontFamily: {
+        display: ["Cormorant Garamond", "serif"],
+        sans: ["Inter", "system-ui", "sans-serif"],
+        arabic: ["Amiri", "serif"],
+      },
+      backgroundImage: {
+        "gradient-hero": "var(--gradient-hero)",
+        "gradient-warm": "var(--gradient-warm)",
+        "gradient-gold": "var(--gradient-gold)",
+        "gradient-page": "var(--gradient-page)",
+      },
+      boxShadow: {
+        book: "var(--shadow-book)",
+        soft: "var(--shadow-soft)",
+      },
       keyframes: {
-        "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+        "accordion-down": { from: { height: "0" }, to: { height: "var(--radix-accordion-content-height)" } },
+        "accordion-up": { from: { height: "var(--radix-accordion-content-height)" }, to: { height: "0" } },
+        "page-flip": {
+          "0%": { transform: "rotateY(0deg)", transformOrigin: "left center" },
+          "100%": { transform: "rotateY(-180deg)", transformOrigin: "left center" },
         },
-        "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+        "fade-up": {
+          "0%": { opacity: "0", transform: "translateY(20px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "float": {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-8px)" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "page-flip": "page-flip 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards",
+        "fade-up": "fade-up 0.6s ease-out forwards",
+        "float": "float 4s ease-in-out infinite",
       },
     },
   },
