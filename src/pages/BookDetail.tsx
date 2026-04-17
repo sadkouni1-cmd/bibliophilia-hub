@@ -298,10 +298,30 @@ const BookDetail = () => {
                       الصوت الحالي: {selectedVoice.name} ({selectedVoice.lang})
                     </p>
                   )}
-                  <div className="mt-4 h-1.5 bg-secondary rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-gold transition-all duration-500"
-                      style={{ width: `${Math.max(3, (narrationPage / book.pageCount) * 100)}%` }}
+                  {arabicVoiceMissing && (
+                    <div className="mt-3 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+                      <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                      <span className="font-arabic leading-relaxed">
+                        صوت القارئ المختار غير متوفر على هذا الجهاز. جرّب اختيار قارئ آخر، أو ثبّت صوتًا عربيًا من إعدادات نظامك.
+                      </span>
+                    </div>
+                  )}
+                  <div className="mt-4 space-y-2">
+                    <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                      <span>الانتقال إلى صفحة</span>
+                      <span>{narrationPage} / {book.pageCount}</span>
+                    </div>
+                    <Slider
+                      value={[narrationPage]}
+                      min={1}
+                      max={book.pageCount}
+                      step={1}
+                      onValueChange={(val) => {
+                        const page = val[0] ?? 1;
+                        narrationPageRef.current = page - 1;
+                        setNarrationPage(page);
+                      }}
+                      onValueCommit={(val) => jumpToPage(val[0] ?? 1)}
                     />
                   </div>
                 </div>
