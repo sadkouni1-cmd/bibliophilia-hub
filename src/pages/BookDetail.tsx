@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Star, Play, Pause, BookOpen, Heart } from "lucide-react";
+import { ArrowLeft, Star, Play, Pause, Square, BookOpen, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/Header";
 import { BookReader } from "@/components/BookReader";
@@ -13,6 +13,15 @@ const speechLangByBook = {
   en: "en-US",
   es: "es-ES",
 } as const;
+
+// Arabic narrator branding — maps friendly names to browser voice hints.
+const arabicNarrators = [
+  { id: "khaled", label: "خالد النجار", hints: ["Majed", "Maged", "male"] },
+  { id: "islam", label: "إسلام عادل", hints: ["Tarik", "ar-EG"] },
+  { id: "taha", label: "طه الحاج أحمد", hints: ["Naayf", "ar-XA"] },
+  { id: "default", label: "الصوت الافتراضي للمتصفح", hints: [] },
+] as const;
+type NarratorId = typeof arabicNarrators[number]["id"];
 
 const BookDetail = () => {
   const { id } = useParams();
