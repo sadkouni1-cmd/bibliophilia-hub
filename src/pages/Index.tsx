@@ -19,6 +19,20 @@ const Index = () => {
     });
   }, [activeCat, activeLang, search]);
 
+  // Group by author when the user is inside a specific section (or searching),
+  // so that each author appears as a header with their books listed beneath.
+  const groupedByAuthor = useMemo(() => {
+    if (activeCat === "all" && !search) return null;
+    const map = new Map<string, typeof filtered>();
+    for (const b of filtered) {
+      const list = map.get(b.author) ?? [];
+      list.push(b);
+      map.set(b.author, list);
+    }
+    return Array.from(map.entries())
+      .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], "ar"));
+  }, [filtered, activeCat, search]);
+
   return (
     <div className="min-h-screen">
       <Header onSearch={setSearch} search={search} />
