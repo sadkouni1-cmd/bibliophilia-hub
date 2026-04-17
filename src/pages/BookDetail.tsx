@@ -32,17 +32,27 @@ const BookDetail = () => {
   const [paused, setPaused] = useState(false);
   const [speechRate, setSpeechRate] = useState(0.95);
   const [narrationPage, setNarrationPage] = useState(1);
+  const [narratorId, setNarratorId] = useState<NarratorId>("khaled");
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
 
   const speechActiveRef = useRef(false);
   const narrationPageRef = useRef(0);
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    const load = () => setVoices(window.speechSynthesis.getVoices());
+    load();
+    window.speechSynthesis.onvoiceschanged = load;
+    return () => {
+      window.speechSynthesis.onvoiceschanged = null;
+    };
+  }, []);
 
   const stopNarration = (resetToStart = false) => {
+    speechActiveRef.current = false;
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
     }
-    speechActiveRef.current = false;
-    utteranceRef.current = null;
     setPlaying(false);
     setPaused(false);
     if (resetToStart) {
@@ -52,7 +62,12 @@ const BookDetail = () => {
   };
 
   useEffect(() => {
-    return () => stopNarration(false);
+    return () => {
+      speechActiveRef.current = false;
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
   }, []);
 
   useEffect(() => {
