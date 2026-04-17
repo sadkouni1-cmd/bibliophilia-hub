@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Star, Play, Pause, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,11 +6,25 @@ import { Header } from "@/components/Header";
 import { BookReader } from "@/components/BookReader";
 import { getBook, languages } from "@/data/books";
 
+const speechLangByBook = {
+  ar: "ar-SA",
+  fr: "fr-FR",
+  en: "en-US",
+  es: "es-ES",
+} as const;
+
 const BookDetail = () => {
   const { id } = useParams();
   const book = getBook(id ?? "");
   const [reading, setReading] = useState(false);
   const [playing, setPlaying] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [speechRate, setSpeechRate] = useState(0.95);
+  const [narrationPage, setNarrationPage] = useState(1);
+
+  const speechActiveRef = useRef(false);
+  const narrationPageRef = useRef(0);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   if (!book) {
     return (
@@ -25,6 +39,113 @@ const BookDetail = () => {
 
   const isRTL = book.language === "ar";
   const lang = languages.find((l) => l.id === book.language);
+  const speechLang = speechLangByBook[book.language];
+
+  const stopNarration = (resetToStart = false) => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    speechActiveRef.current = false;
+    utteranceRef.current = null;
+    setPlaying(false);
+    setPaused(false);
+    if (resetToStart) {
+      narrationPageRef.current = 0;
+      setNarrationPage(1);
+    }
+  };
+
+  const speakPage = (pageIndex: number) => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+
+    const pageText = book.pages[pageIndex] ?? book.description;
+    if (!pageText) {
+      stopNarration(false);
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(pageText);
+    utterance.lang = speechLang;
+    utterance.rate = speechRate;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+
+    utterance.onend = () => {
+      if (!speechActiveRef.current) return;
+      const nextIndex = pageIndex + 1;
+      if (nextIndex >= book.pages.length) {
+        stopNarration(false);
+        return;
+      }
+      narrationPageRef.current = nextIndex;
+      setNarrationPage(nextIndex + 1);
+      speakPage(nextIndex);
+    };
+
+    utterance.onerror = () => {
+      stopNarration(false);
+    };
+
+    utteranceRef.current = utterance;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const handleAudioToggle = () => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+
+    if (playing && !paused) {
+      window.speechSynthesis.pause();
+      setPaused(true);
+      return;
+    }
+
+    if (paused) {
+      window.speechSynthesis.resume();
+      setPaused(false);
+      return;
+    }
+
+    const startIndex = narrationPageRef.current;
+    const utterance = new SpeechSynthesisUtterance();
+    utterance.lang = speechLang;
+    utterance.rate = speechRate;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+    utterance.text = book.pages[startIndex] ?? book.description;
+
+    utterance.onend = () => {
+      if (!speechActiveRef.current) return;
+      const nextIndex = startIndex + 1;
+      if (nextIndex >= book.pages.length) {
+        stopNarration(false);
+        return;
+      }
+      narrationPageRef.current = nextIndex;
+      setNarrationPage(nextIndex + 1);
+      speakPage(nextIndex);
+    };
+
+    utterance.onerror = () => {
+      stopNarration(false);
+    };
+
+    speechActiveRef.current = true;
+    utteranceRef.current = utterance;
+    setPlaying(true);
+    setPaused(false);
+    setNarrationPage(startIndex + 1);
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+  };
+
+  useEffect(() => {
+    return () => stopNarration(false);
+  }, []);
+
+  useEffect(() => {
+    if (reading) stopNarration(false);
+  }, [reading]);
 
   return (
     <div className="min-h-screen">
@@ -59,32 +180,56 @@ const BookDetail = () => {
                 ))}
                 <span className="ml-2 text-sm text-muted-foreground">{book.rating} / 5</span>
               </div>
+              <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                <span>{book.pageCount} صفحة</span>
+                {book.duration && <span>· {book.duration}</span>}
+              </div>
               <p className={`mt-6 text-lg leading-relaxed text-foreground/80 ${isRTL ? "font-arabic" : ""}`}>
                 {book.description}
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
-                {book.category === "audiobooks" ? (
-                  <Button size="lg" onClick={() => setPlaying(!playing)} className="bg-accent text-accent-foreground hover:bg-accent/90 font-display text-base shadow-book">
-                    {playing ? <Pause className="h-5 w-5 mr-2" /> : <Play className="h-5 w-5 mr-2" />}
-                    {playing ? "إيقاف" : "استمع الآن"} {book.duration && `· ${book.duration}`}
-                  </Button>
-                ) : (
-                  <Button size="lg" onClick={() => setReading(true)} className="bg-primary text-primary-foreground hover:bg-primary/90 font-display text-base shadow-book">
-                    <BookOpen className="h-5 w-5 mr-2" />
-                    ابدأ القراءة
-                  </Button>
+                {book.category === "audiobooks" && (
+                  <>
+                    <Button size="lg" onClick={handleAudioToggle} className="bg-accent text-accent-foreground hover:bg-accent/90 font-display text-base shadow-book">
+                      {playing && !paused ? <Pause className="h-5 w-5 mr-2" /> : <Play className="h-5 w-5 mr-2" />}
+                      {playing ? (paused ? "متابعة" : "إيقاف مؤقت") : "استمع الآن"}
+                    </Button>
+                    <Button size="lg" variant="outline" onClick={() => stopNarration(true)} disabled={!playing && !paused} className="font-display text-base">
+                      إيقاف كامل
+                    </Button>
+                  </>
                 )}
+                <Button size="lg" onClick={() => setReading(true)} className="bg-primary text-primary-foreground hover:bg-primary/90 font-display text-base shadow-book">
+                  <BookOpen className="h-5 w-5 mr-2" />
+                  اقرأ الكتاب
+                </Button>
               </div>
 
-              {playing && book.category === "audiobooks" && (
+              {book.category === "audiobooks" && (
                 <div className="mt-6 p-4 rounded-lg bg-card border border-border shadow-soft">
-                  <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
-                    <div className="h-full w-1/3 bg-gradient-gold animate-pulse" />
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-sm text-foreground">
+                      {playing || paused ? `جاري السرد من الصفحة ${narrationPage} من ${book.pageCount}` : `جاهز للاستماع إلى ${book.pageCount} صفحة`}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">السرعة</span>
+                      {[0.85, 0.95, 1.1].map((rate) => (
+                        <button
+                          key={rate}
+                          onClick={() => setSpeechRate(rate)}
+                          className={`rounded-full border px-3 py-1 text-xs transition-smooth ${speechRate === rate ? "bg-accent text-accent-foreground border-accent" : "border-border text-muted-foreground hover:text-foreground"}`}
+                        >
+                          {rate}x
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex justify-between text-xs text-muted-foreground mt-2">
-                    <span>14:23</span>
-                    <span>{book.duration}</span>
+                  <div className="mt-4 h-1.5 bg-secondary rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-gold transition-all duration-500"
+                      style={{ width: `${Math.max(3, (narrationPage / book.pageCount) * 100)}%` }}
+                    />
                   </div>
                 </div>
               )}
@@ -93,9 +238,12 @@ const BookDetail = () => {
         ) : (
           <div className="animate-fade-up">
             <div className="flex items-center justify-between mb-6">
-              <h2 className={`font-display text-2xl md:text-3xl text-primary ${isRTL ? "font-arabic" : ""}`}>
-                {book.title}
-              </h2>
+              <div>
+                <h2 className={`font-display text-2xl md:text-3xl text-primary ${isRTL ? "font-arabic" : ""}`}>
+                  {book.title}
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">{book.pageCount} صفحة كاملة</p>
+              </div>
               <Button variant="outline" onClick={() => setReading(false)}>إغلاق الكتاب</Button>
             </div>
             <BookReader pages={book.pages} isRTL={isRTL} />
