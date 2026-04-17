@@ -26,29 +26,6 @@ const BookDetail = () => {
   const narrationPageRef = useRef(0);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
-  useEffect(() => {
-    return () => stopNarration(false);
-  }, []);
-
-  useEffect(() => {
-    if (reading) stopNarration(false);
-  }, [reading]);
-
-  if (!book) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="font-display text-3xl text-primary">الكتاب غير موجود</p>
-          <Button asChild className="mt-4"><Link to=">/">العودة</Link></Button>
-        </div>
-      </div>
-    );
-  }
-
-  const isRTL = book.language === "ar";
-  const lang = languages.find((l) => l.id === book.language);
-  const speechLang = speechLangByBook[book.language];
-
   const stopNarration = (resetToStart = false) => {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
@@ -62,6 +39,25 @@ const BookDetail = () => {
       setNarrationPage(1);
     }
   };
+
+  useEffect(() => {
+    return () => stopNarration(false);
+  }, []);
+
+  useEffect(() => {
+    if (reading) stopNarration(false);
+  }, [reading]);
+
+  if (!book) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="font-display text-3xl text-primary">الكتاب غير موجود</p>
+          <Button asChild className="mt-4"><Link to="/">العودة</Link></Button>
+        </div>
+      </div>
+    );
+  }
 
   const speakPage = (pageIndex: number) => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
@@ -147,13 +143,6 @@ const BookDetail = () => {
     window.speechSynthesis.speak(utterance);
   };
 
-  useEffect(() => {
-    return () => stopNarration(false);
-  }, []);
-
-  useEffect(() => {
-    if (reading) stopNarration(false);
-  }, [reading]);
 
   return (
     <div className="min-h-screen">
