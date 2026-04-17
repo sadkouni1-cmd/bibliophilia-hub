@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Star, Play, Pause, Square, BookOpen, Heart } from "lucide-react";
+import { ArrowLeft, Star, Play, Pause, Square, BookOpen, Heart, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { Header } from "@/components/Header";
 import { BookReader } from "@/components/BookReader";
 import { getBook, languages } from "@/data/books";
@@ -16,10 +17,9 @@ const speechLangByBook = {
 
 // Arabic narrator branding — maps friendly names to browser voice hints.
 const arabicNarrators: { id: string; label: string; hints: string[] }[] = [
-  { id: "khaled", label: "خالد النجار", hints: ["Majed", "Maged", "male"] },
+  { id: "khaled", label: "خالد النجار", hints: ["Majed", "Maged", "male", "ar-SA"] },
   { id: "islam", label: "إسلام عادل", hints: ["Tarik", "ar-EG"] },
   { id: "taha", label: "طه الحاج أحمد", hints: ["Naayf", "ar-XA"] },
-  { id: "default", label: "الصوت الافتراضي للمتصفح", hints: [] },
 ];
 type NarratorId = string;
 
@@ -83,16 +83,16 @@ const BookDetail = () => {
     const langVoices = voices.filter((v) => v.lang?.toLowerCase().startsWith(langPrefix));
     if (bookLanguage === "ar") {
       const narrator = arabicNarrators.find((n) => n.id === narratorId);
-      if (narrator && narrator.hints.length > 0) {
-        const matched = langVoices.find((v) =>
-          narrator.hints.some(
-            (h) =>
-              v.name.toLowerCase().includes(h.toLowerCase()) ||
-              v.lang.toLowerCase().includes(h.toLowerCase())
-          )
-        );
-        if (matched) return matched;
-      }
+      if (!narrator) return null;
+      const matched = langVoices.find((v) =>
+        narrator.hints.some(
+          (h) =>
+            v.name.toLowerCase().includes(h.toLowerCase()) ||
+            v.lang.toLowerCase().includes(h.toLowerCase())
+        )
+      );
+      // Strict mode: only the matched narrator voice is allowed; never fall back to default.
+      return matched ?? null;
     }
     return langVoices[0] ?? voices[0];
   }, [voices, narratorId, bookLanguage, speechLang]);
@@ -145,8 +145,11 @@ const BookDetail = () => {
     window.speechSynthesis.speak(utterance);
   };
 
+  const arabicVoiceMissing = book.language === "ar" && voices.length > 0 && !selectedVoice;
+
   const handleAudioToggle = () => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    if (arabicVoiceMissing) return;
 
     if (playing && !paused) {
       window.speechSynthesis.pause();
@@ -166,6 +169,22 @@ const BookDetail = () => {
     setNarrationPage(startIndex + 1);
     window.speechSynthesis.cancel();
     speakPage(startIndex);
+  };
+
+  const jumpToPage = (page: number) => {
+    const clamped = Math.max(1, Math.min(book.pageCount, page));
+    const idx = clamped - 1;
+    narrationPageRef.current = idx;
+    setNarrationPage(clamped);
+    if (playing || paused) {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+      speechActiveRef.current = true;
+      setPlaying(true);
+      setPaused(false);
+      speakPage(idx);
+    }
   };
 
 
@@ -213,7 +232,7 @@ const BookDetail = () => {
               <div className="mt-8 flex flex-wrap gap-3">
                 {book.category === "audiobooks" && (
                   <>
-                    <Button size="lg" onClick={handleAudioToggle} className="bg-accent text-accent-foreground hover:bg-accent/90 font-display text-base shadow-book">
+                    <Button size="lg" onClick={handleAudioToggle} disabled={arabicVoiceMissing} className="bg-accent text-accent-foreground hover:bg-accent/90 font-display text-base shadow-book disabled:opacity-50">
                       {playing && !paused ? <Pause className="h-5 w-5 mr-2" /> : <Play className="h-5 w-5 mr-2" />}
                       {playing ? (paused ? "متابعة" : "إيقاف مؤقت") : "استمع الآن"}
                     </Button>
@@ -279,10 +298,30 @@ const BookDetail = () => {
                       الصوت الحالي: {selectedVoice.name} ({selectedVoice.lang})
                     </p>
                   )}
-                  <div className="mt-4 h-1.5 bg-secondary rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-gold transition-all duration-500"
-                      style={{ width: `${Math.max(3, (narrationPage / book.pageCount) * 100)}%` }}
+                  {arabicVoiceMissing && (
+                    <div className="mt-3 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+                      <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                      <span className="font-arabic leading-relaxed">
+                        صوت القارئ المختار غير متوفر على هذا الجهاز. جرّب اختيار قارئ آخر، أو ثبّت صوتًا عربيًا من إعدادات نظامك.
+                      </span>
+                    </div>
+                  )}
+                  <div className="mt-4 space-y-2">
+                    <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                      <span>الانتقال إلى صفحة</span>
+                      <span>{narrationPage} / {book.pageCount}</span>
+                    </div>
+                    <Slider
+                      value={[narrationPage]}
+                      min={1}
+                      max={book.pageCount}
+                      step={1}
+                      onValueChange={(val) => {
+                        const page = val[0] ?? 1;
+                        narrationPageRef.current = page - 1;
+                        setNarrationPage(page);
+                      }}
+                      onValueCommit={(val) => jumpToPage(val[0] ?? 1)}
                     />
                   </div>
                 </div>
