@@ -16,10 +16,9 @@ const speechLangByBook = {
 
 // Arabic narrator branding — maps friendly names to browser voice hints.
 const arabicNarrators: { id: string; label: string; hints: string[] }[] = [
-  { id: "khaled", label: "خالد النجار", hints: ["Majed", "Maged", "male"] },
+  { id: "khaled", label: "خالد النجار", hints: ["Majed", "Maged", "male", "ar-SA"] },
   { id: "islam", label: "إسلام عادل", hints: ["Tarik", "ar-EG"] },
   { id: "taha", label: "طه الحاج أحمد", hints: ["Naayf", "ar-XA"] },
-  { id: "default", label: "الصوت الافتراضي للمتصفح", hints: [] },
 ];
 type NarratorId = string;
 
