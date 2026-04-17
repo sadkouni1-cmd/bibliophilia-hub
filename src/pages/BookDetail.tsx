@@ -80,25 +80,49 @@ const BookDetail = () => {
   const bookLanguage = book?.language;
   const speechLang = bookLanguage ? speechLangByBook[bookLanguage] : "en-US";
 
-  const selectedVoice = useMemo(() => {
-    if (!voices.length || !bookLanguage) return null;
-    const langPrefix = speechLang.split("-")[0];
-    const langVoices = voices.filter((v) => v.lang?.toLowerCase().startsWith(langPrefix));
-    if (bookLanguage === "ar") {
-      const narrator = arabicNarrators.find((n) => n.id === narratorId);
-      if (!narrator) return null;
-      const matched = langVoices.find((v) =>
-        narrator.hints.some(
+  // Build the dynamic narrator list from every Arabic voice the browser exposes.
+  // Branded narrators (خالد، إسلام، طه) take priority when their underlying voices exist;
+  // any remaining Arabic voice is appended with a friendly auto-generated label.
+  const arabicNarrators = useMemo<Narrator[]>(() => {
+    const arabicVoices = voices.filter((v) => v.lang?.toLowerCase().startsWith("ar"));
+    if (!arabicVoices.length) return [];
+    const used = new Set<string>();
+    const result: Narrator[] = [];
+
+    for (const branded of brandedArabicNarrators) {
+      const matched = arabicVoices.find((v) =>
+        branded.hints.some(
           (h) =>
             v.name.toLowerCase().includes(h.toLowerCase()) ||
             v.lang.toLowerCase().includes(h.toLowerCase())
         )
       );
-      // Strict mode: only the matched narrator voice is allowed; never fall back to default.
-      return matched ?? null;
+      if (matched && !used.has(matched.voiceURI)) {
+        result.push({ id: branded.id, label: branded.label, voiceURI: matched.voiceURI });
+        used.add(matched.voiceURI);
+      }
     }
+
+    for (const v of arabicVoices) {
+      if (used.has(v.voiceURI)) continue;
+      result.push({ id: `voice-${v.voiceURI}`, label: `صوت ${v.name} — ${v.lang}`, voiceURI: v.voiceURI });
+      used.add(v.voiceURI);
+    }
+    return result;
+  }, [voices]);
+
+  const selectedVoice = useMemo(() => {
+    if (!voices.length || !bookLanguage) return null;
+    if (bookLanguage === "ar") {
+      // Strict: only narrator-mapped voices are allowed; never fall back to a default.
+      const narrator = arabicNarrators.find((n) => n.id === narratorId) ?? arabicNarrators[0];
+      if (!narrator) return null;
+      return voices.find((v) => v.voiceURI === narrator.voiceURI) ?? null;
+    }
+    const langPrefix = speechLang.split("-")[0];
+    const langVoices = voices.filter((v) => v.lang?.toLowerCase().startsWith(langPrefix));
     return langVoices[0] ?? voices[0];
-  }, [voices, narratorId, bookLanguage, speechLang]);
+  }, [voices, narratorId, bookLanguage, speechLang, arabicNarrators]);
 
   if (!book) {
     return (
