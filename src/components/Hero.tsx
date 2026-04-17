@@ -11,10 +11,10 @@ export const Hero = () => (
     <div className="container relative z-10 py-24 md:py-36 text-center text-primary-foreground">
       <p className="font-arabic text-accent text-lg mb-4 tracking-wide animate-fade-up">مرحباً بك في</p>
       <h1 className="font-display text-5xl md:text-7xl lg:text-8xl font-semibold animate-fade-up" style={{ animationDelay: "0.1s" }}>
-        مكتبة الأرواح
+        Read With Bob
       </h1>
       <p className="mt-6 max-w-2xl mx-auto text-lg md:text-xl text-primary-foreground/85 animate-fade-up" style={{ animationDelay: "0.2s" }}>
-        كتب دينية، فلسفية، قصص للأطفال، روايات وكتب صوتية — بأربع لغات.
+        مئات الكتب الصوتية العربية، روايات، فلسفة، كتب دينية وقصص للأطفال — بأربع لغات.
         <br />
         <span className="text-accent font-display italic text-xl">A library that reads like silk.</span>
       </p>
