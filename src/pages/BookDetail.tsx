@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Star, Play, Pause, BookOpen, Heart } from "lucide-react";
+import { ArrowLeft, Star, Play, Pause, Square, BookOpen, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/Header";
 import { BookReader } from "@/components/BookReader";
@@ -14,6 +14,15 @@ const speechLangByBook = {
   es: "es-ES",
 } as const;
 
+// Arabic narrator branding — maps friendly names to browser voice hints.
+const arabicNarrators: { id: string; label: string; hints: string[] }[] = [
+  { id: "khaled", label: "خالد النجار", hints: ["Majed", "Maged", "male"] },
+  { id: "islam", label: "إسلام عادل", hints: ["Tarik", "ar-EG"] },
+  { id: "taha", label: "طه الحاج أحمد", hints: ["Naayf", "ar-XA"] },
+  { id: "default", label: "الصوت الافتراضي للمتصفح", hints: [] },
+];
+type NarratorId = string;
+
 const BookDetail = () => {
   const { id } = useParams();
   const book = getBook(id ?? "");
@@ -23,17 +32,27 @@ const BookDetail = () => {
   const [paused, setPaused] = useState(false);
   const [speechRate, setSpeechRate] = useState(0.95);
   const [narrationPage, setNarrationPage] = useState(1);
+  const [narratorId, setNarratorId] = useState<NarratorId>("khaled");
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
 
   const speechActiveRef = useRef(false);
   const narrationPageRef = useRef(0);
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    const load = () => setVoices(window.speechSynthesis.getVoices());
+    load();
+    window.speechSynthesis.onvoiceschanged = load;
+    return () => {
+      window.speechSynthesis.onvoiceschanged = null;
+    };
+  }, []);
 
   const stopNarration = (resetToStart = false) => {
+    speechActiveRef.current = false;
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
     }
-    speechActiveRef.current = false;
-    utteranceRef.current = null;
     setPlaying(false);
     setPaused(false);
     if (resetToStart) {
@@ -43,12 +62,40 @@ const BookDetail = () => {
   };
 
   useEffect(() => {
-    return () => stopNarration(false);
+    return () => {
+      speechActiveRef.current = false;
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
   }, []);
 
   useEffect(() => {
     if (reading) stopNarration(false);
   }, [reading]);
+
+  const bookLanguage = book?.language;
+  const speechLang = bookLanguage ? speechLangByBook[bookLanguage] : "en-US";
+
+  const selectedVoice = useMemo(() => {
+    if (!voices.length || !bookLanguage) return null;
+    const langPrefix = speechLang.split("-")[0];
+    const langVoices = voices.filter((v) => v.lang?.toLowerCase().startsWith(langPrefix));
+    if (bookLanguage === "ar") {
+      const narrator = arabicNarrators.find((n) => n.id === narratorId);
+      if (narrator && narrator.hints.length > 0) {
+        const matched = langVoices.find((v) =>
+          narrator.hints.some(
+            (h) =>
+              v.name.toLowerCase().includes(h.toLowerCase()) ||
+              v.lang.toLowerCase().includes(h.toLowerCase())
+          )
+        );
+        if (matched) return matched;
+      }
+    }
+    return langVoices[0] ?? voices[0];
+  }, [voices, narratorId, bookLanguage, speechLang]);
 
   if (!book) {
     return (
@@ -63,23 +110,26 @@ const BookDetail = () => {
 
   const isRTL = book.language === "ar";
   const lang = languages.find((l) => l.id === book.language);
-  const speechLang = speechLangByBook[book.language];
+
+
+  const buildUtterance = (text: string) => {
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = speechLang;
+    u.rate = speechRate;
+    u.pitch = 1;
+    u.volume = 1;
+    if (selectedVoice) u.voice = selectedVoice;
+    return u;
+  };
 
   const speakPage = (pageIndex: number) => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-
     const pageText = book.pages[pageIndex] ?? book.description;
     if (!pageText) {
       stopNarration(false);
       return;
     }
-
-    const utterance = new SpeechSynthesisUtterance(pageText);
-    utterance.lang = speechLang;
-    utterance.rate = speechRate;
-    utterance.pitch = 1;
-    utterance.volume = 1;
-
+    const utterance = buildUtterance(pageText);
     utterance.onend = () => {
       if (!speechActiveRef.current) return;
       const nextIndex = pageIndex + 1;
@@ -91,13 +141,7 @@ const BookDetail = () => {
       setNarrationPage(nextIndex + 1);
       speakPage(nextIndex);
     };
-
-    utterance.onerror = () => {
-      stopNarration(false);
-    };
-
-    utteranceRef.current = utterance;
-    window.speechSynthesis.cancel();
+    utterance.onerror = () => stopNarration(false);
     window.speechSynthesis.speak(utterance);
   };
 
@@ -109,7 +153,6 @@ const BookDetail = () => {
       setPaused(true);
       return;
     }
-
     if (paused) {
       window.speechSynthesis.resume();
       setPaused(false);
@@ -117,36 +160,12 @@ const BookDetail = () => {
     }
 
     const startIndex = narrationPageRef.current;
-    const utterance = new SpeechSynthesisUtterance();
-    utterance.lang = speechLang;
-    utterance.rate = speechRate;
-    utterance.pitch = 1;
-    utterance.volume = 1;
-    utterance.text = book.pages[startIndex] ?? book.description;
-
-    utterance.onend = () => {
-      if (!speechActiveRef.current) return;
-      const nextIndex = startIndex + 1;
-      if (nextIndex >= book.pages.length) {
-        stopNarration(false);
-        return;
-      }
-      narrationPageRef.current = nextIndex;
-      setNarrationPage(nextIndex + 1);
-      speakPage(nextIndex);
-    };
-
-    utterance.onerror = () => {
-      stopNarration(false);
-    };
-
     speechActiveRef.current = true;
-    utteranceRef.current = utterance;
     setPlaying(true);
     setPaused(false);
     setNarrationPage(startIndex + 1);
     window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
+    speakPage(startIndex);
   };
 
 
@@ -199,6 +218,7 @@ const BookDetail = () => {
                       {playing ? (paused ? "متابعة" : "إيقاف مؤقت") : "استمع الآن"}
                     </Button>
                     <Button size="lg" variant="outline" onClick={() => stopNarration(true)} disabled={!playing && !paused} className="font-display text-base">
+                      <Square className="h-5 w-5 mr-2" />
                       إيقاف كامل
                     </Button>
                   </>
@@ -237,6 +257,28 @@ const BookDetail = () => {
                       ))}
                     </div>
                   </div>
+                  {book.language === "ar" && (
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                      <span className="text-xs text-muted-foreground">القارئ</span>
+                      {arabicNarrators.map((n) => (
+                        <button
+                          key={n.id}
+                          onClick={() => {
+                            setNarratorId(n.id);
+                            if (playing || paused) stopNarration(false);
+                          }}
+                          className={`rounded-full border px-3 py-1 text-xs transition-smooth font-arabic ${narratorId === n.id ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
+                        >
+                          {n.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {selectedVoice && (
+                    <p className="mt-2 text-[11px] text-muted-foreground">
+                      الصوت الحالي: {selectedVoice.name} ({selectedVoice.lang})
+                    </p>
+                  )}
                   <div className="mt-4 h-1.5 bg-secondary rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gradient-gold transition-all duration-500"
