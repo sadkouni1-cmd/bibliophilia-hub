@@ -145,8 +145,11 @@ const BookDetail = () => {
     window.speechSynthesis.speak(utterance);
   };
 
+  const arabicVoiceMissing = book.language === "ar" && voices.length > 0 && !selectedVoice;
+
   const handleAudioToggle = () => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    if (arabicVoiceMissing) return;
 
     if (playing && !paused) {
       window.speechSynthesis.pause();
@@ -166,6 +169,22 @@ const BookDetail = () => {
     setNarrationPage(startIndex + 1);
     window.speechSynthesis.cancel();
     speakPage(startIndex);
+  };
+
+  const jumpToPage = (page: number) => {
+    const clamped = Math.max(1, Math.min(book.pageCount, page));
+    const idx = clamped - 1;
+    narrationPageRef.current = idx;
+    setNarrationPage(clamped);
+    if (playing || paused) {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+      speechActiveRef.current = true;
+      setPlaying(true);
+      setPaused(false);
+      speakPage(idx);
+    }
   };
 
 
