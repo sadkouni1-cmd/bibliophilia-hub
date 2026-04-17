@@ -59,6 +59,10 @@ const BookDetail = () => {
     );
   }
 
+  const isRTL = book.language === "ar";
+  const lang = languages.find((l) => l.id === book.language);
+  const speechLang = speechLangByBook[book.language];
+
   const speakPage = (pageIndex: number) => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
 
