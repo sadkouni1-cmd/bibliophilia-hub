@@ -232,7 +232,7 @@ const BookDetail = () => {
               <div className="mt-8 flex flex-wrap gap-3">
                 {book.category === "audiobooks" && (
                   <>
-                    <Button size="lg" onClick={handleAudioToggle} className="bg-accent text-accent-foreground hover:bg-accent/90 font-display text-base shadow-book">
+                    <Button size="lg" onClick={handleAudioToggle} disabled={arabicVoiceMissing} className="bg-accent text-accent-foreground hover:bg-accent/90 font-display text-base shadow-book disabled:opacity-50">
                       {playing && !paused ? <Pause className="h-5 w-5 mr-2" /> : <Play className="h-5 w-5 mr-2" />}
                       {playing ? (paused ? "متابعة" : "إيقاف مؤقت") : "استمع الآن"}
                     </Button>
