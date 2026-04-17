@@ -26,12 +26,20 @@ const BookDetail = () => {
   const narrationPageRef = useRef(0);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
+  useEffect(() => {
+    return () => stopNarration(false);
+  }, []);
+
+  useEffect(() => {
+    if (reading) stopNarration(false);
+  }, [reading]);
+
   if (!book) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="font-display text-3xl text-primary">الكتاب غير موجود</p>
-          <Button asChild className="mt-4"><Link to="/">العودة</Link></Button>
+          <Button asChild className="mt-4"><Link to=">/">العودة</Link></Button>
         </div>
       </div>
     );
