@@ -7,6 +7,7 @@ import novel from "@/assets/cover-novel.jpg";
 
 export type Category = "religious" | "philosophy" | "children" | "stories" | "audiobooks" | "novels";
 export type Lang = "ar" | "fr" | "en" | "es";
+type PageProfile = "short" | "medium" | "long" | "epic";
 
 export interface Book {
   id: string;
@@ -17,8 +18,20 @@ export interface Book {
   cover: string;
   description: string;
   pages: string[];
+  pageCount: number;
   duration?: string;
   rating: number;
+}
+
+interface Seed {
+  title: string;
+  author: string;
+  category: Category;
+  language: Lang;
+  description: string;
+  duration?: string;
+  rating?: number;
+  pageProfile?: PageProfile;
 }
 
 export const categories: { id: Category; label: string; labelEn: string; color: string; icon: string }[] = [
@@ -48,7 +61,57 @@ const coverFor = (cat: Category) => {
   }
 };
 
-/* ----------- Page generators (rich, language-aware, multi-chapter) ----------- */
+const pageCountByProfile: Record<PageProfile, number> = {
+  short: 36,
+  medium: 72,
+  long: 120,
+  epic: 180,
+};
+
+const defaultProfileByCategory: Record<Category, PageProfile> = {
+  religious: "epic",
+  philosophy: "long",
+  children: "short",
+  stories: "medium",
+  audiobooks: "long",
+  novels: "epic",
+};
+
+const arabicCategoryLabel: Record<Category, string> = {
+  religious: "الأدب الديني والروحي",
+  philosophy: "الفكر الفلسفي",
+  children: "قصص الأطفال",
+  stories: "القصص والسرد القصير",
+  audiobooks: "المكتبة الصوتية",
+  novels: "الروايات",
+};
+
+const englishCategoryLabel: Record<Category, string> = {
+  religious: "religious literature",
+  philosophy: "philosophical thought",
+  children: "children's stories",
+  stories: "short stories",
+  audiobooks: "audiobook narration",
+  novels: "novels",
+};
+
+const frenchCategoryLabel: Record<Category, string> = {
+  religious: "la littérature spirituelle",
+  philosophy: "la pensée philosophique",
+  children: "les récits pour enfants",
+  stories: "les nouvelles",
+  audiobooks: "la narration audio",
+  novels: "les romans",
+};
+
+const spanishCategoryLabel: Record<Category, string> = {
+  religious: "la literatura espiritual",
+  philosophy: "el pensamiento filosófico",
+  children: "los cuentos infantiles",
+  stories: "los relatos breves",
+  audiobooks: "la narración en audio",
+  novels: "las novelas",
+};
 
 const arParagraphs = [
   "في صمت الفجر، حين يلتفّ النور حول العالم كحجاب رقيق، يفتح القارئ كتابه كما يفتح المسافر بابًا قديمًا على حديقة لم يزرها من قبل. كل كلمة تنبت كزهرة، وكل سطر يصير ممرًّا بين أشجار المعنى.",
@@ -57,6 +120,8 @@ const arParagraphs = [
   "تعلّمنا من القدماء أن الحكمة لا تُورَث ولا تُشترى، بل تُلتقط كما يلتقط الطفل الصدفة من الشاطئ، بصبر وفرحٍ ودهشة.",
   "وفي اللحظة التي يظنّ فيها القارئ أنه قد فهم كلّ شيء، يقلب صفحةً جديدة فيكتشف أن المعرفة بحرٌ بلا ساحل، وأنه ليس سوى قطرةٍ فيه تتعلّم الذوبان.",
   "اسمع جيّدًا: في كلّ سطر دعوة، وفي كلّ فاصلة وقفة للتأمل، وفي كلّ نقطة بدايةٌ جديدة لمن يملك الشجاعة ليبدأ من جديد.",
+  "هذا الكتاب لا يطلب منك أن تسرع، بل أن تتمهّل؛ أن ترفع عينيك أحيانًا عن الصفحة لتتأمل أثر العبارة في القلب، ثم تعود وقد صار المعنى أكثر صفاءً ورسوخًا.",
+  "وحين تتكاثر الأسئلة، لا يقدّم النص أجوبة جاهزة بقدر ما يفتح نوافذ أوسع للبحث، حتى يشعر القارئ أن الرحلة في داخله لا تقل عمقًا عن الرحلة بين الصفحات.",
 ];
 
 const enParagraphs = [
@@ -64,8 +129,8 @@ const enParagraphs = [
   "A wise man once said that to read a book is to live an extra life. Within these pages there is a complete life, with all its joys and sorrows, beginnings that feel like sunrise and endings that feel like the last breath of a candle.",
   "Words are not merely letters arranged on a page; they are living souls that breathe. Read them with your heart, and you will hear their pulse; read them with your mind, and you will see their light slip into the deepest corners of your thought.",
   "The ancients taught us that wisdom cannot be inherited or bought, but only gathered the way a child gathers seashells from the shore — with patience, joy, and quiet wonder.",
-  "And just when the reader believes he has understood everything, he turns one more page and discovers that knowledge is a sea without shore, and he is but a single drop within it, learning at last how to dissolve.",
-  "Listen carefully: in every line there is an invitation, in every comma a pause for reflection, and in every full stop a new beginning for the one brave enough to begin again.",
+  "Just when the reader believes everything has become clear, another page opens and reminds him that knowledge is a sea without shore, and he is learning, slowly, how to navigate it.",
+  "In every line there is an invitation, in every comma a pause for reflection, and in every full stop a new beginning for the one brave enough to begin again.",
 ];
 
 const frParagraphs = [
@@ -74,7 +139,7 @@ const frParagraphs = [
   "Les mots ne sont pas de simples lettres alignées : ce sont des âmes qui respirent. Lisez-les avec le cœur, vous entendrez leur pouls ; lisez-les avec l'esprit, vous verrez leur lumière s'infiltrer au plus profond de votre pensée.",
   "Les anciens nous ont appris que la sagesse ne s'hérite ni ne s'achète : elle se cueille, comme l'enfant ramasse des coquillages sur la plage, avec patience, joie et émerveillement.",
   "Au moment précis où le lecteur croit avoir tout compris, il tourne une page de plus et découvre que la connaissance est une mer sans rivage, et qu'il n'en est qu'une goutte apprenant à se fondre.",
-  "Écoutez bien : dans chaque ligne il y a une invitation, dans chaque virgule une pause de méditation, et dans chaque point un commencement nouveau pour celui qui ose recommencer.",
+  "Dans chaque ligne il y a une invitation, dans chaque virgule une pause de méditation, et dans chaque point un commencement nouveau pour celui qui ose recommencer.",
 ];
 
 const esParagraphs = [
@@ -83,7 +148,7 @@ const esParagraphs = [
   "Las palabras no son letras alineadas: son almas que respiran. Léelas con el corazón y escucharás su pulso; léelas con la mente y verás su luz colarse en los rincones más hondos de tu pensamiento.",
   "Los antiguos nos enseñaron que la sabiduría no se hereda ni se compra: se recoge como el niño recoge caracolas en la orilla, con paciencia, alegría y asombro silencioso.",
   "Y en el instante en que el lector cree haberlo comprendido todo, vuelve una página más y descubre que el conocimiento es un mar sin orilla, y él apenas una gota aprendiendo a disolverse.",
-  "Escucha bien: en cada línea hay una invitación, en cada coma una pausa para meditar, y en cada punto un nuevo comienzo para quien se atreve a empezar de nuevo.",
+  "En cada línea hay una invitación, en cada coma una pausa para meditar, y en cada punto un nuevo comienzo para quien se atreve a empezar de nuevo.",
 ];
 
 const paragraphsByLang: Record<Lang, string[]> = {
@@ -100,249 +165,407 @@ const chapterLabel: Record<Lang, (n: number) => string> = {
   es: (n) => `Capítulo ${n}`,
 };
 
-// Generate ~20 pages of content per book (full chapters with multiple paragraphs)
-function generatePages(title: string, lang: Lang, chapters = 10, pagesPerChapter = 2): string[] {
-  const paras = paragraphsByLang[lang];
+function stableRating(title: string) {
+  return Number((4.3 + (title.length % 7) * 0.1).toFixed(1));
+}
+
+function pageCountForSeed(seed: Seed) {
+  return pageCountByProfile[seed.pageProfile ?? defaultProfileByCategory[seed.category]];
+}
+
+function generatePages(seed: Pick<Seed, "title" | "author" | "language" | "category">, count: number): string[] {
+  const paras = paragraphsByLang[seed.language];
   const pages: string[] = [];
-  for (let c = 1; c <= chapters; c++) {
-    for (let p = 1; p <= pagesPerChapter; p++) {
-      const heading = `${chapterLabel[lang](c)} — ${title}`;
-      // pick 3 distinct paragraphs per page based on c & p
-      const a = paras[(c + p) % paras.length];
-      const b = paras[(c * 2 + p) % paras.length];
-      const d = paras[(c + p * 3) % paras.length];
-      pages.push(`${heading}\n\n${a}\n\n${b}\n\n${d}`);
+
+  for (let page = 0; page < count; page++) {
+    const chapter = Math.floor(page / 2) + 1;
+    const p1 = paras[(page + 1) % paras.length];
+    const p2 = paras[(page * 2 + 2) % paras.length];
+    const p3 = paras[(page * 3 + 3) % paras.length];
+
+    const heading = `${chapterLabel[seed.language](chapter)} — ${seed.title}`;
+
+    let intro = "";
+    if (seed.language === "ar") {
+      intro = `هذا المقطع من كتاب «${seed.title}» للمؤلف ${seed.author} ينتمي إلى ${arabicCategoryLabel[seed.category]}، ويُعرض هنا في صفحات مطوّلة لتجربة قراءة متصلة وسلسة داخل التطبيق.`;
+    } else if (seed.language === "fr") {
+      intro = `Cet extrait prolongé de « ${seed.title} » par ${seed.author} appartient à ${frenchCategoryLabel[seed.category]} et est présenté ici dans un format de lecture continue pour l'application.`;
+    } else if (seed.language === "es") {
+      intro = `Este fragmento ampliado de «${seed.title}» de ${seed.author} pertenece a ${spanishCategoryLabel[seed.category]} y aparece aquí en un formato continuo de lectura para la aplicación.`;
+    } else {
+      intro = `This extended reading page from “${seed.title}” by ${seed.author} belongs to ${englishCategoryLabel[seed.category]} and is presented here in a smooth, continuous in-app reading format.`;
     }
+
+    pages.push(`${heading}\n\n${intro}\n\n${p1}\n\n${p2}\n\n${p3}`);
   }
+
   return pages;
 }
 
-/* ----------- Catalogue ----------- */
-
-interface Seed {
-  title: string;
-  author: string;
-  category: Category;
-  language: Lang;
-  description: string;
-  duration?: string;
-  rating?: number;
-}
-
-// Curated Arabic audiobooks (100+)
-const arabicAudiobookTitles: { t: string; a: string; d: string }[] = [
-  { t: "الأيام", a: "طه حسين", d: "12h 30m" },
-  { t: "موسم الهجرة إلى الشمال", a: "الطيب صالح", d: "8h 15m" },
-  { t: "ساق البامبو", a: "سعود السنعوسي", d: "14h 05m" },
-  { t: "عزازيل", a: "يوسف زيدان", d: "16h 20m" },
-  { t: "ثلاثية غرناطة", a: "رضوى عاشور", d: "22h 10m" },
-  { t: "رجال في الشمس", a: "غسان كنفاني", d: "5h 40m" },
-  { t: "ذاكرة الجسد", a: "أحلام مستغانمي", d: "13h 25m" },
-  { t: "فوضى الحواس", a: "أحلام مستغانمي", d: "11h 50m" },
-  { t: "عابر سرير", a: "أحلام مستغانمي", d: "10h 15m" },
-  { t: "مدن الملح", a: "عبد الرحمن منيف", d: "30h 45m" },
-  { t: "شرق المتوسط", a: "عبد الرحمن منيف", d: "9h 20m" },
-  { t: "زقاق المدق", a: "نجيب محفوظ", d: "10h 30m" },
-  { t: "بين القصرين", a: "نجيب محفوظ", d: "18h 40m" },
-  { t: "قصر الشوق", a: "نجيب محفوظ", d: "17h 55m" },
-  { t: "السكرية", a: "نجيب محفوظ", d: "16h 10m" },
-  { t: "أولاد حارتنا", a: "نجيب محفوظ", d: "14h 25m" },
-  { t: "اللص والكلاب", a: "نجيب محفوظ", d: "6h 45m" },
-  { t: "ميرامار", a: "نجيب محفوظ", d: "7h 30m" },
-  { t: "ثرثرة فوق النيل", a: "نجيب محفوظ", d: "8h 20m" },
-  { t: "الحرافيش", a: "نجيب محفوظ", d: "20h 15m" },
-  { t: "خان الخليلي", a: "نجيب محفوظ", d: "9h 50m" },
-  { t: "السراب", a: "نجيب محفوظ", d: "11h 05m" },
-  { t: "أرض النفاق", a: "يوسف السباعي", d: "8h 30m" },
-  { t: "رد قلبي", a: "يوسف السباعي", d: "12h 40m" },
-  { t: "إني راحلة", a: "يوسف السباعي", d: "9h 15m" },
-  { t: "الحب في زمن الكوليرا", a: "غابرييل غارسيا ماركيز (مترجم)", d: "15h 20m" },
-  { t: "مئة عام من العزلة", a: "غابرييل غارسيا ماركيز (مترجم)", d: "17h 45m" },
-  { t: "الخيميائي", a: "باولو كويلو (مترجم)", d: "4h 30m" },
-  { t: "ساحرة بورتوبيلو", a: "باولو كويلو (مترجم)", d: "6h 15m" },
-  { t: "أحدب نوتردام", a: "فيكتور هوغو (مترجم)", d: "16h 40m" },
-  { t: "البؤساء", a: "فيكتور هوغو (مترجم)", d: "48h 30m" },
-  { t: "مدام بوفاري", a: "غوستاف فلوبير (مترجم)", d: "13h 25m" },
-  { t: "الجريمة والعقاب", a: "فيودور دوستويفسكي (مترجم)", d: "21h 10m" },
-  { t: "الإخوة كارامازوف", a: "فيودور دوستويفسكي (مترجم)", d: "37h 50m" },
-  { t: "الأبله", a: "فيودور دوستويفسكي (مترجم)", d: "28h 20m" },
-  { t: "آنا كارينينا", a: "ليو تولستوي (مترجم)", d: "35h 15m" },
-  { t: "الحرب والسلام", a: "ليو تولستوي (مترجم)", d: "61h 40m" },
-  { t: "كبرياء وتحامل", a: "جين أوستن (مترجم)", d: "11h 30m" },
-  { t: "العجوز والبحر", a: "إرنست همنغواي (مترجم)", d: "2h 45m" },
-  { t: "وداعًا للسلاح", a: "إرنست همنغواي (مترجم)", d: "9h 20m" },
-  { t: "1984", a: "جورج أورويل (مترجم)", d: "10h 50m" },
-  { t: "مزرعة الحيوان", a: "جورج أورويل (مترجم)", d: "3h 15m" },
-  { t: "الأمير الصغير", a: "أنطوان دو سانت إكزوبيري (مترجم)", d: "1h 50m" },
-  { t: "كليلة ودمنة", a: "ابن المقفع", d: "7h 25m" },
-  { t: "ألف ليلة وليلة", a: "تراث شعبي", d: "120h 00m" },
-  { t: "البخلاء", a: "الجاحظ", d: "8h 40m" },
-  { t: "مقدمة ابن خلدون", a: "ابن خلدون", d: "25h 10m" },
-  { t: "رسالة الغفران", a: "أبو العلاء المعري", d: "9h 20m" },
-  { t: "طوق الحمامة", a: "ابن حزم الأندلسي", d: "6h 30m" },
-  { t: "إحياء علوم الدين", a: "أبو حامد الغزالي", d: "60h 00m" },
-  { t: "المنقذ من الضلال", a: "أبو حامد الغزالي", d: "3h 45m" },
-  { t: "حي بن يقظان", a: "ابن طفيل", d: "4h 20m" },
-  { t: "البخاري — صحيح", a: "الإمام البخاري", d: "80h 00m" },
-  { t: "صحيح مسلم", a: "الإمام مسلم", d: "70h 00m" },
-  { t: "رياض الصالحين", a: "الإمام النووي", d: "15h 30m" },
-  { t: "زاد المعاد", a: "ابن قيم الجوزية", d: "32h 40m" },
-  { t: "الداء والدواء", a: "ابن قيم الجوزية", d: "10h 15m" },
-  { t: "تفسير ابن كثير", a: "ابن كثير", d: "100h 00m" },
-  { t: "في ظلال القرآن", a: "سيد قطب", d: "85h 20m" },
-  { t: "لا تحزن", a: "عائض القرني", d: "12h 30m" },
-  { t: "أيقظ العملاق الذي بداخلك", a: "أنتوني روبنز (مترجم)", d: "15h 45m" },
-  { t: "العادات السبع للناس الأكثر فعالية", a: "ستيفن كوفي (مترجم)", d: "13h 20m" },
-  { t: "كيف تكسب الأصدقاء وتؤثر في الناس", a: "ديل كارنيجي (مترجم)", d: "10h 40m" },
-  { t: "فن اللامبالاة", a: "مارك مانسون (مترجم)", d: "5h 30m" },
-  { t: "قوة الآن", a: "إيكهارت تول (مترجم)", d: "7h 15m" },
-  { t: "الخروج عن النص", a: "إبراهيم الفقي", d: "6h 45m" },
-  { t: "قوة التحكم في الذات", a: "إبراهيم الفقي", d: "8h 20m" },
-  { t: "أسرار قادة التميز", a: "إبراهيم الفقي", d: "9h 10m" },
-  { t: "السر", a: "روندا بايرن (مترجم)", d: "5h 50m" },
-  { t: "أبي الغني وأبي الفقير", a: "روبرت كيوساكي (مترجم)", d: "7h 30m" },
-  { t: "أسطورة الصباح", a: "حال إلرود (مترجم)", d: "6h 15m" },
-  { t: "الرجال من المريخ والنساء من الزهرة", a: "جون غراي (مترجم)", d: "9h 25m" },
-  { t: "اللغات الخمس للحب", a: "جاري تشابمان (مترجم)", d: "5h 40m" },
-  { t: "البجعة السوداء", a: "نسيم نيكولاس طالب (مترجم)", d: "14h 30m" },
-  { t: "العقد الاجتماعي", a: "جان جاك روسو (مترجم)", d: "6h 20m" },
-  { t: "هكذا تكلم زرادشت", a: "نيتشه (مترجم)", d: "11h 40m" },
-  { t: "العالم كإرادة وتمثل", a: "شوبنهاور (مترجم)", d: "18h 15m" },
-  { t: "تأملات", a: "ماركوس أوريليوس (مترجم)", d: "5h 30m" },
-  { t: "جمهورية أفلاطون", a: "أفلاطون (مترجم)", d: "16h 20m" },
-  { t: "الأخلاق إلى نيقوماخوس", a: "أرسطو (مترجم)", d: "12h 45m" },
-  { t: "تاريخ الفلسفة الغربية", a: "برتراند راسل (مترجم)", d: "30h 10m" },
-  { t: "الإنسان يبحث عن المعنى", a: "فيكتور فرانكل (مترجم)", d: "5h 45m" },
-  { t: "علم النفس التحليلي", a: "كارل يونغ (مترجم)", d: "10h 30m" },
-  { t: "تفسير الأحلام", a: "سيغموند فرويد (مترجم)", d: "14h 20m" },
-  { t: "حضارة العرب", a: "غوستاف لوبون (مترجم)", d: "16h 30m" },
-  { t: "الأمير", a: "ميكافيلي (مترجم)", d: "4h 15m" },
-  { t: "فن الحرب", a: "صن تزو (مترجم)", d: "3h 30m" },
-  { t: "تاريخ الطبري", a: "ابن جرير الطبري", d: "100h 00m" },
-  { t: "البداية والنهاية", a: "ابن كثير", d: "90h 00m" },
-  { t: "صلاح الدين الأيوبي", a: "عبد الله علوان", d: "10h 20m" },
-  { t: "عمر بن الخطاب", a: "علي محمد الصلابي", d: "18h 40m" },
-  { t: "أبو بكر الصديق", a: "علي محمد الصلابي", d: "14h 30m" },
-  { t: "الرحيق المختوم", a: "صفي الرحمن المباركفوري", d: "20h 15m" },
-  { t: "فقه السيرة", a: "محمد الغزالي", d: "16h 45m" },
-  { t: "خلق المسلم", a: "محمد الغزالي", d: "8h 30m" },
-  { t: "جدد حياتك", a: "محمد الغزالي", d: "7h 20m" },
-  { t: "عقيدة المسلم", a: "محمد الغزالي", d: "9h 15m" },
-  { t: "أنا", a: "عباس محمود العقاد", d: "6h 30m" },
-  { t: "عبقرية محمد", a: "عباس محمود العقاد", d: "12h 50m" },
-  { t: "عبقرية الصديق", a: "عباس محمود العقاد", d: "9h 25m" },
-  { t: "عبقرية عمر", a: "عباس محمود العقاد", d: "10h 15m" },
-  { t: "عبقرية علي", a: "عباس محمود العقاد", d: "11h 40m" },
-  { t: "عبقرية خالد", a: "عباس محمود العقاد", d: "8h 30m" },
-  { t: "وحي القلم", a: "مصطفى صادق الرافعي", d: "14h 20m" },
-  { t: "تحت راية القرآن", a: "مصطفى صادق الرافعي", d: "10h 35m" },
-  { t: "حديث الأربعاء", a: "طه حسين", d: "11h 50m" },
-  { t: "دعاء الكروان", a: "طه حسين", d: "7h 40m" },
-  { t: "شجرة البؤس", a: "طه حسين", d: "6h 25m" },
-  { t: "الفلسفة المادية وتفكيكها", a: "محمد قطب", d: "9h 15m" },
-  { t: "منهج التربية الإسلامية", a: "محمد قطب", d: "12h 30m" },
-  { t: "صيد الخاطر", a: "ابن الجوزي", d: "15h 45m" },
-  { t: "تلبيس إبليس", a: "ابن الجوزي", d: "18h 20m" },
+const arabicAudiobookTitles: Array<[string, string, string]> = [
+  ["الأيام", "طه حسين", "12h 30m"],
+  ["موسم الهجرة إلى الشمال", "الطيب صالح", "8h 15m"],
+  ["ساق البامبو", "سعود السنعوسي", "14h 05m"],
+  ["عزازيل", "يوسف زيدان", "16h 20m"],
+  ["ثلاثية غرناطة", "رضوى عاشور", "22h 10m"],
+  ["رجال في الشمس", "غسان كنفاني", "5h 40m"],
+  ["ذاكرة الجسد", "أحلام مستغانمي", "13h 25m"],
+  ["فوضى الحواس", "أحلام مستغانمي", "11h 50m"],
+  ["عابر سرير", "أحلام مستغانمي", "10h 15m"],
+  ["مدن الملح", "عبد الرحمن منيف", "30h 45m"],
+  ["شرق المتوسط", "عبد الرحمن منيف", "9h 20m"],
+  ["زقاق المدق", "نجيب محفوظ", "10h 30m"],
+  ["بين القصرين", "نجيب محفوظ", "18h 40m"],
+  ["قصر الشوق", "نجيب محفوظ", "17h 55m"],
+  ["السكرية", "نجيب محفوظ", "16h 10m"],
+  ["أولاد حارتنا", "نجيب محفوظ", "14h 25m"],
+  ["اللص والكلاب", "نجيب محفوظ", "6h 45m"],
+  ["ميرامار", "نجيب محفوظ", "7h 30m"],
+  ["ثرثرة فوق النيل", "نجيب محفوظ", "8h 20m"],
+  ["الحرافيش", "نجيب محفوظ", "20h 15m"],
+  ["خان الخليلي", "نجيب محفوظ", "9h 50m"],
+  ["السراب", "نجيب محفوظ", "11h 05m"],
+  ["أرض النفاق", "يوسف السباعي", "8h 30m"],
+  ["رد قلبي", "يوسف السباعي", "12h 40m"],
+  ["إني راحلة", "يوسف السباعي", "9h 15m"],
+  ["الحب في زمن الكوليرا", "غابرييل غارسيا ماركيز (مترجم)", "15h 20m"],
+  ["مئة عام من العزلة", "غابرييل غارسيا ماركيز (مترجم)", "17h 45m"],
+  ["الخيميائي", "باولو كويلو (مترجم)", "4h 30m"],
+  ["ساحرة بورتوبيلو", "باولو كويلو (مترجم)", "6h 15m"],
+  ["أحدب نوتردام", "فيكتور هوغو (مترجم)", "16h 40m"],
+  ["البؤساء", "فيكتور هوغو (مترجم)", "48h 30m"],
+  ["مدام بوفاري", "غوستاف فلوبير (مترجم)", "13h 25m"],
+  ["الجريمة والعقاب", "فيودور دوستويفسكي (مترجم)", "21h 10m"],
+  ["الإخوة كارامازوف", "فيودور دوستويفسكي (مترجم)", "37h 50m"],
+  ["الأبله", "فيودور دوستويفسكي (مترجم)", "28h 20m"],
+  ["آنا كارينينا", "ليو تولستوي (مترجم)", "35h 15m"],
+  ["الحرب والسلام", "ليو تولستوي (مترجم)", "61h 40m"],
+  ["كبرياء وتحامل", "جين أوستن (مترجم)", "11h 30m"],
+  ["العجوز والبحر", "إرنست همنغواي (مترجم)", "2h 45m"],
+  ["1984", "جورج أورويل (مترجم)", "10h 50m"],
+  ["مزرعة الحيوان", "جورج أورويل (مترجم)", "3h 15m"],
+  ["الأمير الصغير", "أنطوان دو سانت إكزوبيري (مترجم)", "1h 50m"],
+  ["كليلة ودمنة", "ابن المقفع", "7h 25m"],
+  ["ألف ليلة وليلة", "تراث شعبي", "120h 00m"],
+  ["البخلاء", "الجاحظ", "8h 40m"],
+  ["مقدمة ابن خلدون", "ابن خلدون", "25h 10m"],
+  ["رسالة الغفران", "أبو العلاء المعري", "9h 20m"],
+  ["طوق الحمامة", "ابن حزم الأندلسي", "6h 30m"],
+  ["إحياء علوم الدين", "أبو حامد الغزالي", "60h 00m"],
+  ["المنقذ من الضلال", "أبو حامد الغزالي", "3h 45m"],
+  ["حي بن يقظان", "ابن طفيل", "4h 20m"],
+  ["صحيح البخاري", "الإمام البخاري", "80h 00m"],
+  ["صحيح مسلم", "الإمام مسلم", "70h 00m"],
+  ["رياض الصالحين", "الإمام النووي", "15h 30m"],
+  ["زاد المعاد", "ابن قيم الجوزية", "32h 40m"],
+  ["الداء والدواء", "ابن قيم الجوزية", "10h 15m"],
+  ["تفسير ابن كثير", "ابن كثير", "100h 00m"],
+  ["في ظلال القرآن", "سيد قطب", "85h 20m"],
+  ["لا تحزن", "عائض القرني", "12h 30m"],
+  ["أيقظ العملاق الذي بداخلك", "أنتوني روبنز (مترجم)", "15h 45m"],
+  ["العادات السبع للناس الأكثر فعالية", "ستيفن كوفي (مترجم)", "13h 20m"],
+  ["كيف تكسب الأصدقاء وتؤثر في الناس", "ديل كارنيجي (مترجم)", "10h 40m"],
+  ["فن اللامبالاة", "مارك مانسون (مترجم)", "5h 30m"],
+  ["قوة الآن", "إيكهارت تول (مترجم)", "7h 15m"],
+  ["الخروج عن النص", "إبراهيم الفقي", "6h 45m"],
+  ["قوة التحكم في الذات", "إبراهيم الفقي", "8h 20m"],
+  ["أسرار قادة التميز", "إبراهيم الفقي", "9h 10m"],
+  ["السر", "روندا بايرن (مترجم)", "5h 50m"],
+  ["أبي الغني وأبي الفقير", "روبرت كيوساكي (مترجم)", "7h 30m"],
+  ["أسطورة الصباح", "حال إلرود (مترجم)", "6h 15m"],
+  ["الرجال من المريخ والنساء من الزهرة", "جون غراي (مترجم)", "9h 25m"],
+  ["اللغات الخمس للحب", "جاري تشابمان (مترجم)", "5h 40m"],
+  ["البجعة السوداء", "نسيم نيكولاس طالب (مترجم)", "14h 30m"],
+  ["العقد الاجتماعي", "جان جاك روسو (مترجم)", "6h 20m"],
+  ["هكذا تكلم زرادشت", "نيتشه (مترجم)", "11h 40m"],
+  ["العالم كإرادة وتمثل", "شوبنهاور (مترجم)", "18h 15m"],
+  ["تأملات", "ماركوس أوريليوس (مترجم)", "5h 30m"],
+  ["جمهورية أفلاطون", "أفلاطون (مترجم)", "16h 20m"],
+  ["الأخلاق إلى نيقوماخوس", "أرسطو (مترجم)", "12h 45m"],
+  ["تاريخ الفلسفة الغربية", "برتراند راسل (مترجم)", "30h 10m"],
+  ["الإنسان يبحث عن المعنى", "فيكتور فرانكل (مترجم)", "5h 45m"],
+  ["علم النفس التحليلي", "كارل يونغ (مترجم)", "10h 30m"],
+  ["تفسير الأحلام", "سيغموند فرويد (مترجم)", "14h 20m"],
+  ["حضارة العرب", "غوستاف لوبون (مترجم)", "16h 30m"],
+  ["الأمير", "ميكافيلي (مترجم)", "4h 15m"],
+  ["فن الحرب", "صن تزو (مترجم)", "3h 30m"],
+  ["تاريخ الطبري", "ابن جرير الطبري", "100h 00m"],
+  ["البداية والنهاية", "ابن كثير", "90h 00m"],
+  ["الرحيق المختوم", "صفي الرحمن المباركفوري", "20h 15m"],
+  ["خلق المسلم", "محمد الغزالي", "8h 30m"],
+  ["جدد حياتك", "محمد الغزالي", "7h 20m"],
+  ["عقيدة المسلم", "محمد الغزالي", "9h 15m"],
+  ["أنا", "عباس محمود العقاد", "6h 30m"],
+  ["عبقرية محمد", "عباس محمود العقاد", "12h 50m"],
+  ["عبقرية الصديق", "عباس محمود العقاد", "9h 25m"],
+  ["عبقرية عمر", "عباس محمود العقاد", "10h 15m"],
+  ["عبقرية علي", "عباس محمود العقاد", "11h 40m"],
+  ["عبقرية خالد", "عباس محمود العقاد", "8h 30m"],
+  ["وحي القلم", "مصطفى صادق الرافعي", "14h 20m"],
+  ["تحت راية القرآن", "مصطفى صادق الرافعي", "10h 35m"],
+  ["حديث الأربعاء", "طه حسين", "11h 50m"],
+  ["دعاء الكروان", "طه حسين", "7h 40m"],
+  ["شجرة البؤس", "طه حسين", "6h 25m"],
+  ["الفلسفة المادية وتفكيكها", "محمد قطب", "9h 15m"],
+  ["منهج التربية الإسلامية", "محمد قطب", "12h 30m"],
+  ["صيد الخاطر", "ابن الجوزي", "15h 45m"],
+  ["تلبيس إبليس", "ابن الجوزي", "18h 20m"],
 ];
 
-// Curated multi-language books (50+)
-const otherBooks: Seed[] = [
-  // Religious
-  { title: "Le Coran — Traduction française", author: "Hamidullah", category: "religious", language: "fr", description: "Traduction poétique et fidèle du texte sacré." },
-  { title: "The Holy Bible — King James", author: "Classic Edition", category: "religious", language: "en", description: "The timeless King James translation of the Holy Bible." },
-  { title: "La Bible de Jérusalem", author: "École Biblique", category: "religious", language: "fr", description: "Une référence francophone des Saintes Écritures." },
-  { title: "El Corán — Traducción", author: "Julio Cortés", category: "religious", language: "es", description: "Traducción al español del libro sagrado del islam." },
-  { title: "Confessions", author: "Saint Augustin", category: "religious", language: "fr", description: "Le voyage spirituel intime d'Augustin d'Hippone." },
-  { title: "The Imitation of Christ", author: "Thomas à Kempis", category: "religious", language: "en", description: "A timeless Christian devotional classic." },
-  { title: "صحيح البخاري — مختارات", author: "الإمام البخاري", category: "religious", language: "ar", description: "أصح كتاب بعد كتاب الله." },
-  { title: "رياض الصالحين", author: "الإمام النووي", category: "religious", language: "ar", description: "أحاديث جامعة في الأخلاق والآداب." },
-  { title: "زاد المعاد", author: "ابن قيم الجوزية", category: "religious", language: "ar", description: "في هدي خير العباد." },
-  { title: "تفسير الجلالين", author: "السيوطي والمحلي", category: "religious", language: "ar", description: "تفسير ميسر للقرآن الكريم." },
+const arabicPhilosophyTitles: Array<[string, string]> = [
+  ["فصل المقال", "ابن رشد"],
+  ["تهافت التهافت", "ابن رشد"],
+  ["الإشارات والتنبيهات", "ابن سينا"],
+  ["الشفاء", "ابن سينا"],
+  ["النجاة", "ابن سينا"],
+  ["رسائل إخوان الصفا", "إخوان الصفا"],
+  ["آراء أهل المدينة الفاضلة", "الفارابي"],
+  ["السياسة المدنية", "الفارابي"],
+  ["تحصيل السعادة", "الفارابي"],
+  ["مشكاة الأنوار", "أبو حامد الغزالي"],
+  ["معيار العلم", "أبو حامد الغزالي"],
+  ["القسطاس المستقيم", "أبو حامد الغزالي"],
+  ["حي بن يقظان", "ابن طفيل"],
+  ["رسالة التوحيد", "محمد عبده"],
+  ["مستقبل الثقافة في مصر", "طه حسين"],
+  ["تجديد الفكر العربي", "زكي نجيب محمود"],
+  ["تجديد الفكر الديني", "محمد إقبال"],
+  ["نحن والتراث", "محمد عابد الجابري"],
+  ["تكوين العقل العربي", "محمد عابد الجابري"],
+  ["بنية العقل العربي", "محمد عابد الجابري"],
+  ["العقل السياسي العربي", "محمد عابد الجابري"],
+  ["نقد العقل العربي", "محمد عابد الجابري"],
+  ["الإيديولوجيا العربية المعاصرة", "عبد الله العروي"],
+  ["مفهوم العقل", "عبد الله العروي"],
+  ["في الشعر الجاهلي", "طه حسين"],
+  ["المنقذ من الضلال", "أبو حامد الغزالي"],
+  ["رسالة في العقل", "الفارابي"],
+  ["الرد على المنطقيين", "ابن تيمية"],
+  ["درء تعارض العقل والنقل", "ابن تيمية"],
+  ["التفكير فريضة إسلامية", "عباس محمود العقاد"],
+  ["الله", "عباس محمود العقاد"],
+  ["الفلسفة القرآنية", "محمد باقر الصدر"],
+  ["اقتصادنا", "محمد باقر الصدر"],
+  ["فلسفتنا", "محمد باقر الصدر"],
+  ["الأسس المنطقية للاستقراء", "محمد باقر الصدر"],
+  ["الإنسان والحضارة", "مالك بن نبي"],
+  ["شروط النهضة", "مالك بن نبي"],
+  ["مشكلة الأفكار في العالم الإسلامي", "مالك بن نبي"],
+  ["الظاهرة القرآنية", "مالك بن نبي"],
+  ["مشكلة الثقافة", "مالك بن نبي"],
+];
 
-  // Philosophy
-  { title: "Méditations", author: "Marc Aurèle", category: "philosophy", language: "fr", description: "Les pensées intimes d'un empereur stoïcien." },
-  { title: "Beyond Good and Evil", author: "Friedrich Nietzsche", category: "philosophy", language: "en", description: "A bold critique of moral philosophy." },
-  { title: "Thus Spoke Zarathustra", author: "Friedrich Nietzsche", category: "philosophy", language: "en", description: "The poetic philosophical masterpiece." },
-  { title: "El Mundo de Sofía", author: "Jostein Gaarder", category: "philosophy", language: "es", description: "Un viaje fascinante por la historia de la filosofía." },
-  { title: "Ética a Nicómaco", author: "Aristóteles", category: "philosophy", language: "es", description: "Tratado fundacional sobre la virtud y la felicidad." },
-  { title: "تهافت الفلاسفة", author: "أبو حامد الغزالي", category: "philosophy", language: "ar", description: "نقد فلسفي عميق." },
-  { title: "Le Mythe de Sisyphe", author: "Albert Camus", category: "philosophy", language: "fr", description: "Essai sur l'absurde et le sens de la vie." },
-  { title: "L'Être et le Néant", author: "Jean-Paul Sartre", category: "philosophy", language: "fr", description: "Œuvre majeure de l'existentialisme." },
-  { title: "The Republic", author: "Plato", category: "philosophy", language: "en", description: "Plato's exploration of justice and the ideal state." },
-  { title: "Discurso del Método", author: "René Descartes", category: "philosophy", language: "es", description: "El nacimiento del pensamiento moderno." },
+const arabicStoriesTitles: Array<[string, string]> = [
+  ["قصص الأنبياء", "ابن كثير"],
+  ["كليلة ودمنة", "ابن المقفع"],
+  ["ألف ليلة وليلة", "تراث شعبي"],
+  ["البخلاء", "الجاحظ"],
+  ["مقامات الحريري", "الحريري"],
+  ["مقامات بديع الزمان الهمذاني", "بديع الزمان الهمذاني"],
+  ["وحي القلم — قصص", "مصطفى صادق الرافعي"],
+  ["أرخص ليالي", "يوسف إدريس"],
+  ["جمهورية فرحات", "يوسف إدريس"],
+  ["العسكري الأسود", "يوسف إدريس"],
+  ["بيت من لحم", "يوسف إدريس"],
+  ["النداهة", "يوسف إدريس"],
+  ["دنيا الله", "نجيب محفوظ"],
+  ["همس الجنون", "نجيب محفوظ"],
+  ["تحت المظلة", "نجيب محفوظ"],
+  ["حكايات حارتنا", "نجيب محفوظ"],
+  ["الشيخ والبحر — حكاية عربية", "إعداد عربي"],
+  ["أرض البرتقال الحزين", "غسان كنفاني"],
+  ["عن الرجال والبنادق", "غسان كنفاني"],
+  ["عالم ليس لنا", "غسان كنفاني"],
+  ["النمور في اليوم العاشر", "زكريا تامر"],
+  ["دمشق الحرائق", "زكريا تامر"],
+  ["صهيل الجواد الأبيض", "إبراهيم نصر الله"],
+  ["نوادر جحا", "تراث شعبي"],
+  ["حكايات جدتي", "تراث شعبي عربي"],
+  ["أساطير عربية", "إعداد عربي"],
+  ["حكايات المدن القديمة", "إعداد عربي"],
+  ["قصص الصالحين", "إعداد عربي"],
+  ["قصص الحيوان في القرآن", "أحمد بهجت"],
+  ["مغامرات السندباد", "تراث شعبي"],
+  ["علاء الدين والمصباح السحري", "ألف ليلة وليلة"],
+  ["علي بابا والأربعون لصاً", "ألف ليلة وليلة"],
+  ["حكايات الملوك والحكماء", "تراث عربي"],
+  ["مجالس الأدب", "إعداد عربي"],
+  ["قصص قصيرة من التراث الأندلسي", "إعداد عربي"],
+];
 
-  // Children
-  { title: "Le Petit Prince", author: "Antoine de Saint-Exupéry", category: "children", language: "fr", description: "Une fable poétique pour les enfants et les rêveurs." },
-  { title: "El Principito", author: "Antoine de Saint-Exupéry", category: "children", language: "es", description: "Una historia de amistad y descubrimiento." },
-  { title: "Where the Wild Things Are", author: "Maurice Sendak", category: "children", language: "en", description: "A magical journey to the land of wild creatures." },
-  { title: "The Very Hungry Caterpillar", author: "Eric Carle", category: "children", language: "en", description: "A beloved tale of growth and transformation." },
-  { title: "Charlie and the Chocolate Factory", author: "Roald Dahl", category: "children", language: "en", description: "Willy Wonka and the magical golden ticket." },
-  { title: "Matilda", author: "Roald Dahl", category: "children", language: "en", description: "The story of an extraordinary little girl." },
-  { title: "Les Contes de Perrault", author: "Charles Perrault", category: "children", language: "fr", description: "Contes classiques pour petits et grands." },
-  { title: "Cuentos de los hermanos Grimm", author: "Hermanos Grimm", category: "children", language: "es", description: "Cuentos clásicos de hadas." },
-  { title: "حكايات جدتي", author: "تراث شعبي عربي", category: "children", language: "ar", description: "قصص جميلة قبل النوم للأطفال." },
-  { title: "كليلة ودمنة للأطفال", author: "ابن المقفع (مبسط)", category: "children", language: "ar", description: "حكمة الحيوانات في حُلّة طفولية." },
-  { title: "جحا والحمار", author: "تراث شعبي", category: "children", language: "ar", description: "نوادر جحا الممتعة." },
-  { title: "علاء الدين والمصباح السحري", author: "ألف ليلة وليلة", category: "children", language: "ar", description: "حكاية خيالية ساحرة من التراث." },
-  { title: "علي بابا والأربعون حرامي", author: "ألف ليلة وليلة", category: "children", language: "ar", description: "مغامرة كلاسيكية من ألف ليلة." },
-  { title: "السندباد البحري", author: "ألف ليلة وليلة", category: "children", language: "ar", description: "سبع رحلات مدهشة." },
+const arabicNovelTitles: Array<[string, string]> = [
+  ["موسم الهجرة إلى الشمال", "الطيب صالح"],
+  ["عرس الزين", "الطيب صالح"],
+  ["بندر شاه", "الطيب صالح"],
+  ["ساق البامبو", "سعود السنعوسي"],
+  ["فئران أمي حصة", "سعود السنعوسي"],
+  ["عزازيل", "يوسف زيدان"],
+  ["النبطي", "يوسف زيدان"],
+  ["ظل الأفعى", "يوسف زيدان"],
+  ["ذاكرة الجسد", "أحلام مستغانمي"],
+  ["فوضى الحواس", "أحلام مستغانمي"],
+  ["عابر سرير", "أحلام مستغانمي"],
+  ["زقاق المدق", "نجيب محفوظ"],
+  ["خان الخليلي", "نجيب محفوظ"],
+  ["السراب", "نجيب محفوظ"],
+  ["بداية ونهاية", "نجيب محفوظ"],
+  ["الطريق", "نجيب محفوظ"],
+  ["الشحاذ", "نجيب محفوظ"],
+  ["السمان والخريف", "نجيب محفوظ"],
+  ["ميرامار", "نجيب محفوظ"],
+  ["الحرافيش", "نجيب محفوظ"],
+  ["بين القصرين", "نجيب محفوظ"],
+  ["قصر الشوق", "نجيب محفوظ"],
+  ["السكرية", "نجيب محفوظ"],
+  ["أولاد حارتنا", "نجيب محفوظ"],
+  ["رجال في الشمس", "غسان كنفاني"],
+  ["ما تبقى لكم", "غسان كنفاني"],
+  ["عائد إلى حيفا", "غسان كنفاني"],
+  ["أم سعد", "غسان كنفاني"],
+  ["مدن الملح", "عبد الرحمن منيف"],
+  ["شرق المتوسط", "عبد الرحمن منيف"],
+  ["حين تركنا الجسر", "عبد الرحمن منيف"],
+  ["النهايات", "عبد الرحمن منيف"],
+  ["الحي اللاتيني", "سهيل إدريس"],
+  ["دعاء الكروان", "طه حسين"],
+  ["شجرة البؤس", "طه حسين"],
+  ["عودة الروح", "توفيق الحكيم"],
+  ["يوميات نائب في الأرياف", "توفيق الحكيم"],
+  ["عصفور من الشرق", "توفيق الحكيم"],
+  ["الحي اللاتيني", "سهيل إدريس"],
+  ["موسم صيد الغزلان", "أحمد مراد"],
+  ["الفيل الأزرق", "أحمد مراد"],
+  ["تراب الماس", "أحمد مراد"],
+  ["يوتوبيا", "أحمد خالد توفيق"],
+  ["في ممر الفئران", "أحمد خالد توفيق"],
+  ["الأسود يليق بك", "أحلام مستغانمي"],
+  ["واحة الغروب", "بهاء طاهر"],
+  ["خالتي صفية والدير", "بهاء طاهر"],
+  ["الحب في المنفى", "بهاء طاهر"],
+  ["الطوق والأسورة", "يحيى الطاهر عبد الله"],
+  ["موت صغير", "محمد حسن علوان"],
+  ["القوقعة", "مصطفى خليفة"],
+  ["سمرقند", "أمين معلوف"],
+  ["ليون الإفريقي", "أمين معلوف"],
+  ["حدائق الرئيس", "محسن الرملي"],
+  ["باب الشمس", "إلياس خوري"],
+  ["يالو", "إلياس خوري"],
+  ["الطلياني", "شكري المبخوت"],
+  ["الخبز الحافي", "محمد شكري"],
+  ["زمن الخيول البيضاء", "إبراهيم نصر الله"],
+  ["قناديل ملك الجليل", "إبراهيم نصر الله"],
+];
 
-  // Stories
-  { title: "Nouvelles complètes", author: "Guy de Maupassant", category: "stories", language: "fr", description: "Recueil des plus belles nouvelles." },
-  { title: "The Great Short Stories", author: "Edgar Allan Poe", category: "stories", language: "en", description: "Dark, mysterious, unforgettable tales." },
-  { title: "Cuentos de Borges", author: "Jorge Luis Borges", category: "stories", language: "es", description: "Laberintos literarios magistrales." },
-  { title: "The Stories of Anton Chekhov", author: "Anton Chekhov", category: "stories", language: "en", description: "Masterful short fiction from Russia." },
-  { title: "Cuentos de Cortázar", author: "Julio Cortázar", category: "stories", language: "es", description: "Realidad y fantasía entrelazadas." },
-  { title: "Dubliners", author: "James Joyce", category: "stories", language: "en", description: "Fifteen interlinked stories of Dublin life." },
-  { title: "أيام العرب في الجاهلية", author: "محمد أحمد جاد المولى", category: "stories", language: "ar", description: "قصص العرب قبل الإسلام." },
-  { title: "قصص الأنبياء", author: "ابن كثير", category: "stories", language: "ar", description: "سير الأنبياء عليهم السلام." },
-
-  // Novels
-  { title: "L'Étranger", author: "Albert Camus", category: "novels", language: "fr", description: "Roman existentiel inoubliable." },
-  { title: "La Peste", author: "Albert Camus", category: "novels", language: "fr", description: "Allégorie sur la résistance humaine." },
-  { title: "Madame Bovary", author: "Gustave Flaubert", category: "novels", language: "fr", description: "Chef-d'œuvre du réalisme français." },
-  { title: "Notre-Dame de Paris", author: "Victor Hugo", category: "novels", language: "fr", description: "Roman épique gothique de Hugo." },
-  { title: "1984", author: "George Orwell", category: "novels", language: "en", description: "A chilling dystopian masterpiece." },
-  { title: "Animal Farm", author: "George Orwell", category: "novels", language: "en", description: "A sharp political allegory." },
-  { title: "Pride and Prejudice", author: "Jane Austen", category: "novels", language: "en", description: "A timeless story of love and society." },
-  { title: "To Kill a Mockingbird", author: "Harper Lee", category: "novels", language: "en", description: "A profound American classic." },
-  { title: "The Great Gatsby", author: "F. Scott Fitzgerald", category: "novels", language: "en", description: "The American dream in the Jazz Age." },
-  { title: "Cien años de soledad", author: "Gabriel García Márquez", category: "novels", language: "es", description: "El realismo mágico en su forma más pura." },
-  { title: "El amor en los tiempos del cólera", author: "Gabriel García Márquez", category: "novels", language: "es", description: "Una historia de amor que vence al tiempo." },
-  { title: "Don Quijote de la Mancha", author: "Miguel de Cervantes", category: "novels", language: "es", description: "La obra cumbre de la literatura española." },
-  { title: "La Casa de los Espíritus", author: "Isabel Allende", category: "novels", language: "es", description: "Una saga familiar mágica." },
-  { title: "موسم الهجرة إلى الشمال", author: "الطيب صالح", category: "novels", language: "ar", description: "رواية عربية خالدة عن الهوية والاغتراب." },
-  { title: "ساق البامبو", author: "سعود السنعوسي", category: "novels", language: "ar", description: "بحث عن الهوية بين فلبين والكويت." },
-  { title: "عزازيل", author: "يوسف زيدان", category: "novels", language: "ar", description: "رواية تاريخية مثيرة عن مصر القديمة." },
-  { title: "ذاكرة الجسد", author: "أحلام مستغانمي", category: "novels", language: "ar", description: "ثلاثية الحب والجزائر." },
-  { title: "زقاق المدق", author: "نجيب محفوظ", category: "novels", language: "ar", description: "تحفة محفوظ القاهرية." },
-  { title: "أولاد حارتنا", author: "نجيب محفوظ", category: "novels", language: "ar", description: "عمل رمزي عظيم." },
+const multilingualSeeds: Seed[] = [
+  { title: "Le Coran — Traduction française", author: "Hamidullah", category: "religious", language: "fr", description: "Traduction poétique et fidèle du texte sacré.", pageProfile: "epic" },
+  { title: "The Holy Bible — King James", author: "Classic Edition", category: "religious", language: "en", description: "The timeless King James translation of the Holy Bible.", pageProfile: "epic" },
+  { title: "La Bible de Jérusalem", author: "École Biblique", category: "religious", language: "fr", description: "Une référence francophone des Saintes Écritures.", pageProfile: "epic" },
+  { title: "El Corán — Traducción", author: "Julio Cortés", category: "religious", language: "es", description: "Traducción al español del libro sagrado del islam.", pageProfile: "epic" },
+  { title: "Confessions", author: "Saint Augustin", category: "religious", language: "fr", description: "Le voyage spirituel intime d'Augustin d'Hippone.", pageProfile: "long" },
+  { title: "The Imitation of Christ", author: "Thomas à Kempis", category: "religious", language: "en", description: "A timeless Christian devotional classic.", pageProfile: "long" },
+  { title: "Méditations", author: "Marc Aurèle", category: "philosophy", language: "fr", description: "Les pensées intimes d'un empereur stoïcien.", pageProfile: "long" },
+  { title: "Beyond Good and Evil", author: "Friedrich Nietzsche", category: "philosophy", language: "en", description: "A bold critique of moral philosophy.", pageProfile: "long" },
+  { title: "Thus Spoke Zarathustra", author: "Friedrich Nietzsche", category: "philosophy", language: "en", description: "The poetic philosophical masterpiece.", pageProfile: "long" },
+  { title: "El Mundo de Sofía", author: "Jostein Gaarder", category: "philosophy", language: "es", description: "Un viaje fascinante por la historia de la filosofía.", pageProfile: "long" },
+  { title: "Ética a Nicómaco", author: "Aristóteles", category: "philosophy", language: "es", description: "Tratado fundacional sobre la virtud y la felicidad.", pageProfile: "long" },
+  { title: "Le Mythe de Sisyphe", author: "Albert Camus", category: "philosophy", language: "fr", description: "Essai sur l'absurde et le sens de la vie.", pageProfile: "long" },
+  { title: "L'Être et le Néant", author: "Jean-Paul Sartre", category: "philosophy", language: "fr", description: "Œuvre majeure de l'existentialisme.", pageProfile: "epic" },
+  { title: "The Republic", author: "Plato", category: "philosophy", language: "en", description: "Plato's exploration of justice and the ideal state.", pageProfile: "long" },
+  { title: "Discurso del Método", author: "René Descartes", category: "philosophy", language: "es", description: "El nacimiento del pensamiento moderno.", pageProfile: "medium" },
+  { title: "Le Petit Prince", author: "Antoine de Saint-Exupéry", category: "children", language: "fr", description: "Une fable poétique pour les enfants et les rêveurs.", pageProfile: "short" },
+  { title: "El Principito", author: "Antoine de Saint-Exupéry", category: "children", language: "es", description: "Una historia de amistad y descubrimiento.", pageProfile: "short" },
+  { title: "Where the Wild Things Are", author: "Maurice Sendak", category: "children", language: "en", description: "A magical journey to the land of wild creatures.", pageProfile: "short" },
+  { title: "The Very Hungry Caterpillar", author: "Eric Carle", category: "children", language: "en", description: "A beloved tale of growth and transformation.", pageProfile: "short" },
+  { title: "Charlie and the Chocolate Factory", author: "Roald Dahl", category: "children", language: "en", description: "Willy Wonka and the magical golden ticket.", pageProfile: "medium" },
+  { title: "Matilda", author: "Roald Dahl", category: "children", language: "en", description: "The story of an extraordinary little girl.", pageProfile: "medium" },
+  { title: "Les Contes de Perrault", author: "Charles Perrault", category: "children", language: "fr", description: "Contes classiques pour petits et grands.", pageProfile: "short" },
+  { title: "Cuentos de los hermanos Grimm", author: "Hermanos Grimm", category: "children", language: "es", description: "Cuentos clásicos de hadas.", pageProfile: "short" },
+  { title: "Nouvelles complètes", author: "Guy de Maupassant", category: "stories", language: "fr", description: "Recueil des plus belles nouvelles.", pageProfile: "medium" },
+  { title: "The Great Short Stories", author: "Edgar Allan Poe", category: "stories", language: "en", description: "Dark, mysterious, unforgettable tales.", pageProfile: "medium" },
+  { title: "Cuentos de Borges", author: "Jorge Luis Borges", category: "stories", language: "es", description: "Laberintos literarios magistrales.", pageProfile: "medium" },
+  { title: "The Stories of Anton Chekhov", author: "Anton Chekhov", category: "stories", language: "en", description: "Masterful short fiction from Russia.", pageProfile: "medium" },
+  { title: "Cuentos de Cortázar", author: "Julio Cortázar", category: "stories", language: "es", description: "Realidad y fantasía entrelazadas.", pageProfile: "medium" },
+  { title: "Dubliners", author: "James Joyce", category: "stories", language: "en", description: "Fifteen interlinked stories of Dublin life.", pageProfile: "medium" },
+  { title: "L'Étranger", author: "Albert Camus", category: "novels", language: "fr", description: "Roman existentiel inoubliable.", pageProfile: "long" },
+  { title: "La Peste", author: "Albert Camus", category: "novels", language: "fr", description: "Allégorie sur la résistance humaine.", pageProfile: "long" },
+  { title: "Madame Bovary", author: "Gustave Flaubert", category: "novels", language: "fr", description: "Chef-d'œuvre du réalisme français.", pageProfile: "epic" },
+  { title: "Notre-Dame de Paris", author: "Victor Hugo", category: "novels", language: "fr", description: "Roman épique gothique de Hugo.", pageProfile: "epic" },
+  { title: "1984", author: "George Orwell", category: "novels", language: "en", description: "A chilling dystopian masterpiece.", pageProfile: "long" },
+  { title: "Animal Farm", author: "George Orwell", category: "novels", language: "en", description: "A sharp political allegory.", pageProfile: "medium" },
+  { title: "Pride and Prejudice", author: "Jane Austen", category: "novels", language: "en", description: "A timeless story of love and society.", pageProfile: "epic" },
+  { title: "To Kill a Mockingbird", author: "Harper Lee", category: "novels", language: "en", description: "A profound American classic.", pageProfile: "long" },
+  { title: "The Great Gatsby", author: "F. Scott Fitzgerald", category: "novels", language: "en", description: "The American dream in the Jazz Age.", pageProfile: "medium" },
+  { title: "Cien años de soledad", author: "Gabriel García Márquez", category: "novels", language: "es", description: "El realismo mágico en su forma más pura.", pageProfile: "epic" },
+  { title: "El amor en los tiempos del cólera", author: "Gabriel García Márquez", category: "novels", language: "es", description: "Una historia de amor que vence al tiempo.", pageProfile: "epic" },
+  { title: "Don Quijote de la Mancha", author: "Miguel de Cervantes", category: "novels", language: "es", description: "La obra cumbre de la literatura española.", pageProfile: "epic" },
+  { title: "La Casa de los Espíritus", author: "Isabel Allende", category: "novels", language: "es", description: "Una saga familiar mágica.", pageProfile: "epic" },
 ];
 
 const allSeeds: Seed[] = [
-  ...arabicAudiobookTitles.map((b) => ({
-    title: b.t,
-    author: b.a,
+  ...arabicAudiobookTitles.map(([title, author, duration]) => ({
+    title,
+    author,
+    duration,
     category: "audiobooks" as Category,
     language: "ar" as Lang,
-    description: `كتاب صوتي بصوت دافئ — ${b.a}.`,
-    duration: b.d,
-    rating: 4.5 + Math.random() * 0.5,
+    description: `كتاب صوتي عربي مطوّل بصوت مفعّل داخل المتصفح — ${author}.`,
+    pageProfile: "long" as PageProfile,
   })),
-  ...otherBooks,
+  ...arabicPhilosophyTitles.map(([title, author]) => ({
+    title,
+    author,
+    category: "philosophy" as Category,
+    language: "ar" as Lang,
+    description: `كتاب فلسفي عربي بقراءة ممتدة وصفحات مطولة — ${author}.`,
+    pageProfile: "long" as PageProfile,
+  })),
+  ...arabicStoriesTitles.map(([title, author]) => ({
+    title,
+    author,
+    category: "stories" as Category,
+    language: "ar" as Lang,
+    description: `مجموعة قصصية عربية وصفحات قراءة متصلة — ${author}.`,
+    pageProfile: "medium" as PageProfile,
+  })),
+  ...arabicNovelTitles.map(([title, author]) => ({
+    title,
+    author,
+    category: "novels" as Category,
+    language: "ar" as Lang,
+    description: `رواية عربية مطولة بتجربة قراءة كاملة داخل التطبيق — ${author}.`,
+    pageProfile: "epic" as PageProfile,
+  })),
+  ...multilingualSeeds,
 ];
 
-export const books: Book[] = allSeeds.map((s, i) => ({
-  id: String(i + 1),
-  title: s.title,
-  author: s.author,
-  category: s.category,
-  language: s.language,
-  cover: coverFor(s.category),
-  description: s.description,
-  pages: generatePages(s.title, s.language, 10, 2), // 20 full pages each
-  duration: s.duration,
-  rating: Number((s.rating ?? (4.4 + Math.random() * 0.6)).toFixed(1)),
+export const books: Book[] = allSeeds.map((seed, index) => ({
+  id: String(index + 1),
+  title: seed.title,
+  author: seed.author,
+  category: seed.category,
+  language: seed.language,
+  cover: coverFor(seed.category),
+  description: seed.description,
+  pages: [],
+  pageCount: pageCountForSeed(seed),
+  duration: seed.duration,
+  rating: seed.rating ?? stableRating(seed.title),
 }));
 
-export const getBook = (id: string) => books.find((b) => b.id === id);
+const fullBookCache = new Map<string, Book>();
+
+export const getBook = (id: string) => {
+  const cached = fullBookCache.get(id);
+  if (cached) return cached;
+
+  const book = books.find((entry) => entry.id === id);
+  if (!book) return undefined;
+
+  const fullBook: Book = {
+    ...book,
+    pages: generatePages(book, book.pageCount),
+  };
+
+  fullBookCache.set(id, fullBook);
+  return fullBook;
+};
