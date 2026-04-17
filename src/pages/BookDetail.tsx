@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Star, Play, Pause, Square, BookOpen, Heart } from "lucide-react";
+import { ArrowLeft, Star, Play, Pause, Square, BookOpen, Heart, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { Header } from "@/components/Header";
 import { BookReader } from "@/components/BookReader";
 import { getBook, languages } from "@/data/books";
