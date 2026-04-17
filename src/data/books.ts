@@ -888,6 +888,14 @@ const allSeeds: Seed[] = [
     description: `رواية عربية مطولة بتجربة قراءة كاملة داخل التطبيق — ${author}.`,
     pageProfile: "epic" as PageProfile,
   })),
+  ...arabicReligiousTitles.map(([title, author]) => ({
+    title,
+    author,
+    category: "religious" as Category,
+    language: "ar" as Lang,
+    description: `كتاب ديني عربي بتجربة قراءة كاملة داخل التطبيق — ${author}.`,
+    pageProfile: "epic" as PageProfile,
+  })),
   ...multilingualSeeds,
 ];
 
