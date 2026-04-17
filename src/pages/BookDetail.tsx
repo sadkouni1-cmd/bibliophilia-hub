@@ -74,6 +74,29 @@ const BookDetail = () => {
     if (reading) stopNarration(false);
   }, [reading]);
 
+  const bookLanguage = book?.language;
+  const speechLang = bookLanguage ? speechLangByBook[bookLanguage] : "en-US";
+
+  const selectedVoice = useMemo(() => {
+    if (!voices.length || !bookLanguage) return null;
+    const langPrefix = speechLang.split("-")[0];
+    const langVoices = voices.filter((v) => v.lang?.toLowerCase().startsWith(langPrefix));
+    if (bookLanguage === "ar") {
+      const narrator = arabicNarrators.find((n) => n.id === narratorId);
+      if (narrator && narrator.hints.length > 0) {
+        const matched = langVoices.find((v) =>
+          narrator.hints.some(
+            (h) =>
+              v.name.toLowerCase().includes(h.toLowerCase()) ||
+              v.lang.toLowerCase().includes(h.toLowerCase())
+          )
+        );
+        if (matched) return matched;
+      }
+    }
+    return langVoices[0] ?? voices[0];
+  }, [voices, narratorId, bookLanguage, speechLang]);
+
   if (!book) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -87,24 +110,7 @@ const BookDetail = () => {
 
   const isRTL = book.language === "ar";
   const lang = languages.find((l) => l.id === book.language);
-  const speechLang = speechLangByBook[book.language];
 
-  const selectedVoice = useMemo(() => {
-    if (!voices.length) return null;
-    const langPrefix = speechLang.split("-")[0];
-    const langVoices = voices.filter((v) => v.lang?.toLowerCase().startsWith(langPrefix));
-    if (book.language === "ar") {
-      const narrator = arabicNarrators.find((n) => n.id === narratorId);
-      if (narrator?.hints.length) {
-        const matched = langVoices.find((v) =>
-          narrator.hints.some((h) => v.name.toLowerCase().includes(h.toLowerCase()) || v.lang.toLowerCase().includes(h.toLowerCase()))
-        );
-        if (matched) return matched;
-      }
-      return langVoices[0] ?? voices[0];
-    }
-    return langVoices[0] ?? voices[0];
-  }, [voices, narratorId, book.language, speechLang]);
 
   const buildUtterance = (text: string) => {
     const u = new SpeechSynthesisUtterance(text);
