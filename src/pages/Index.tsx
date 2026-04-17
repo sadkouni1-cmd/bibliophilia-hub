@@ -102,6 +102,22 @@ const Index = () => {
           <div className="text-center py-20 text-muted-foreground">
             <p className="font-display text-2xl">لا توجد كتب مطابقة</p>
           </div>
+        ) : groupedByAuthor ? (
+          <div className="space-y-12">
+            {groupedByAuthor.map(([author, list]) => (
+              <section key={author} className="animate-fade-up">
+                <div className="flex items-baseline justify-between mb-4 border-b border-border/60 pb-2">
+                  <h3 className="font-display text-2xl md:text-3xl text-primary">{author}</h3>
+                  <span className="text-xs text-muted-foreground">{list.length} كتاب</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-10">
+                  {list.map((b) => (
+                    <BookCard key={b.id} book={b} />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-10">
             {filtered.map((b) => (
