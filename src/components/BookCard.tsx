@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Star, Headphones, Heart } from "lucide-react";
+import { Star, Heart } from "lucide-react";
 import type { Book } from "@/data/books";
 import { useFavorites } from "@/lib/library-storage";
 
@@ -33,11 +33,6 @@ export const BookCard = ({ book }: { book: Book }) => {
           />
           <div className="book-spine absolute inset-0 pointer-events-none" />
           <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-smooth" />
-          {book.category === "audiobooks" && (
-            <div className="absolute top-2 right-2 rounded-full bg-accent text-accent-foreground p-1.5 shadow-soft">
-              <Headphones className="h-3.5 w-3.5" />
-            </div>
-          )}
           <div className="absolute bottom-2 left-2 right-2 text-primary-foreground opacity-0 group-hover:opacity-100 transition-smooth">
             <p className="text-xs line-clamp-2">{book.description}</p>
           </div>
