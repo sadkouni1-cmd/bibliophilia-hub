@@ -5,7 +5,7 @@ import stories from "@/assets/cover-stories.jpg";
 import audio from "@/assets/cover-audio.jpg";
 import novel from "@/assets/cover-novel.jpg";
 
-export type Category = "religious" | "philosophy" | "children" | "stories" | "novels";
+export type Category = "religious" | "philosophy" | "children" | "stories" | "novels" | "selfdev" | "trending";
 export type Lang = "ar" | "fr" | "en" | "es";
 type PageProfile = "short" | "medium" | "long" | "epic";
 
@@ -35,8 +35,10 @@ interface Seed {
 }
 
 export const categories: { id: Category; label: string; labelEn: string; color: string; icon: string }[] = [
+  { id: "trending", label: "الأكثر رواجًا", labelEn: "Trending", color: "hsl(var(--cat-audio))", icon: "🔥" },
   { id: "religious", label: "ديني", labelEn: "Religious", color: "hsl(var(--cat-religious))", icon: "📿" },
   { id: "philosophy", label: "فلسفة", labelEn: "Philosophy", color: "hsl(var(--cat-philosophy))", icon: "🏛️" },
+  { id: "selfdev", label: "تنمية ذاتية", labelEn: "Self-Development", color: "hsl(var(--cat-audio))", icon: "🌱" },
   { id: "children", label: "أطفال", labelEn: "Children", color: "hsl(var(--cat-children))", icon: "🦊" },
   { id: "stories", label: "قصص قصيرة", labelEn: "Short Stories", color: "hsl(var(--cat-stories))", icon: "📖" },
   { id: "novels", label: "روايات", labelEn: "Novels", color: "hsl(var(--cat-novel))", icon: "🌅" },
@@ -56,6 +58,8 @@ const coverFor = (cat: Category) => {
     case "children": return childrenCover;
     case "stories": return stories;
     case "novels": return novel;
+    case "selfdev": return audio;
+    case "trending": return novel;
   }
 };
 
@@ -72,6 +76,8 @@ const defaultProfileByCategory: Record<Category, PageProfile> = {
   children: "short",
   stories: "medium",
   novels: "epic",
+  selfdev: "long",
+  trending: "long",
 };
 
 const arabicCategoryLabel: Record<Category, string> = {
@@ -80,6 +86,8 @@ const arabicCategoryLabel: Record<Category, string> = {
   children: "قصص الأطفال",
   stories: "القصص والسرد القصير",
   novels: "الروايات",
+  selfdev: "التنمية الذاتية والنجاح",
+  trending: "الكتب الأكثر رواجًا",
 };
 
 const englishCategoryLabel: Record<Category, string> = {
@@ -88,6 +96,8 @@ const englishCategoryLabel: Record<Category, string> = {
   children: "children's stories",
   stories: "short stories",
   novels: "novels",
+  selfdev: "self-development",
+  trending: "trending books",
 };
 
 const frenchCategoryLabel: Record<Category, string> = {
@@ -96,6 +106,8 @@ const frenchCategoryLabel: Record<Category, string> = {
   children: "les récits pour enfants",
   stories: "les nouvelles",
   novels: "les romans",
+  selfdev: "le développement personnel",
+  trending: "les livres tendance",
 };
 
 const spanishCategoryLabel: Record<Category, string> = {
@@ -104,6 +116,8 @@ const spanishCategoryLabel: Record<Category, string> = {
   children: "los cuentos infantiles",
   stories: "los relatos breves",
   novels: "las novelas",
+  selfdev: "el desarrollo personal",
+  trending: "los libros tendencia",
 };
 
 const arParagraphs = [
