@@ -38,16 +38,16 @@ const Index = () => {
       <Header onSearch={setSearch} search={search} />
       <Hero />
 
-      <main id="library" className="container py-16">
+      <main id="library" className="container py-10 sm:py-16 px-4 sm:px-6">
         {/* Category strip */}
-        <div className="mb-8">
-          <h2 className="font-display text-3xl md:text-4xl text-primary mb-2">الأقسام</h2>
-          <p className="text-muted-foreground mb-6">اختر القسم الذي يناسب مزاجك اليوم</p>
-          <div className="flex flex-wrap gap-3">
+        <div className="mb-6 sm:mb-8">
+          <h2 className="font-display text-2xl sm:text-3xl md:text-4xl text-primary mb-1 sm:mb-2">الأقسام</h2>
+          <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6">اختر القسم الذي يناسب مزاجك اليوم</p>
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             <button
               onClick={() => setActiveCat("all")}
               className={cn(
-                "px-5 py-2.5 rounded-full font-display text-base transition-smooth shadow-soft",
+                "px-3 sm:px-5 py-2 sm:py-2.5 rounded-full font-display text-sm sm:text-base transition-smooth shadow-soft",
                 activeCat === "all" ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-secondary"
               )}
             >
@@ -58,25 +58,25 @@ const Index = () => {
                 key={c.id}
                 onClick={() => setActiveCat(c.id)}
                 className={cn(
-                  "px-5 py-2.5 rounded-full font-display text-base transition-smooth shadow-soft flex items-center gap-2",
+                  "px-3 sm:px-5 py-2 sm:py-2.5 rounded-full font-display text-sm sm:text-base transition-smooth shadow-soft flex items-center gap-1.5 sm:gap-2",
                   activeCat === c.id ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-secondary"
                 )}
               >
                 <span>{c.icon}</span>
                 <span>{c.label}</span>
-                <span className="text-xs opacity-70">· {c.labelEn}</span>
+                <span className="hidden sm:inline text-xs opacity-70">· {c.labelEn}</span>
               </button>
             ))}
           </div>
         </div>
 
         {/* Language filter */}
-        <div className="mb-12 flex flex-wrap items-center gap-2">
-          <span className="text-sm text-muted-foreground mr-2">اللغة:</span>
+        <div className="mb-8 sm:mb-12 flex flex-wrap items-center gap-2">
+          <span className="text-xs sm:text-sm text-muted-foreground mr-1 sm:mr-2">اللغة:</span>
           <button
             onClick={() => setActiveLang("all")}
             className={cn(
-              "px-3 py-1 rounded-full text-sm transition-smooth border",
+              "px-3 py-1 rounded-full text-xs sm:text-sm transition-smooth border",
               activeLang === "all" ? "bg-accent text-accent-foreground border-accent" : "border-border text-muted-foreground hover:text-foreground"
             )}
           >
@@ -87,7 +87,7 @@ const Index = () => {
               key={l.id}
               onClick={() => setActiveLang(l.id)}
               className={cn(
-                "px-3 py-1 rounded-full text-sm transition-smooth border flex items-center gap-1.5",
+                "px-3 py-1 rounded-full text-xs sm:text-sm transition-smooth border flex items-center gap-1.5",
                 activeLang === l.id ? "bg-accent text-accent-foreground border-accent" : "border-border text-muted-foreground hover:text-foreground"
               )}
             >
@@ -99,18 +99,18 @@ const Index = () => {
 
         {/* Books grid */}
         {filtered.length === 0 ? (
-          <div className="text-center py-20 text-muted-foreground">
-            <p className="font-display text-2xl">لا توجد كتب مطابقة</p>
+          <div className="text-center py-16 sm:py-20 text-muted-foreground">
+            <p className="font-display text-xl sm:text-2xl">لا توجد كتب مطابقة</p>
           </div>
         ) : groupedByAuthor ? (
-          <div className="space-y-12">
+          <div className="space-y-10 sm:space-y-12">
             {groupedByAuthor.map(([author, list]) => (
               <section key={author} className="animate-fade-up">
-                <div className="flex items-baseline justify-between mb-4 border-b border-border/60 pb-2">
-                  <h3 className="font-display text-2xl md:text-3xl text-primary">{author}</h3>
-                  <span className="text-xs text-muted-foreground">{list.length} كتاب</span>
+                <div className="flex items-baseline justify-between mb-3 sm:mb-4 border-b border-border/60 pb-2 gap-3">
+                  <h3 className="font-display text-xl sm:text-2xl md:text-3xl text-primary truncate">{author}</h3>
+                  <span className="text-xs text-muted-foreground shrink-0">{list.length} كتاب</span>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-10">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 sm:gap-x-6 gap-y-8 sm:gap-y-10">
                   {list.map((b) => (
                     <BookCard key={b.id} book={b} />
                   ))}
@@ -119,7 +119,7 @@ const Index = () => {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-10">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 sm:gap-x-6 gap-y-8 sm:gap-y-10">
             {filtered.map((b) => (
               <BookCard key={b.id} book={b} />
             ))}
@@ -127,8 +127,8 @@ const Index = () => {
         )}
       </main>
 
-      <footer className="border-t border-border/60 mt-20 py-10 text-center text-sm text-muted-foreground">
-        <p className="font-display text-2xl text-primary">Read With Bob</p>
+      <footer className="border-t border-border/60 mt-12 sm:mt-20 py-8 sm:py-10 text-center text-xs sm:text-sm text-muted-foreground px-4">
+        <p className="font-display text-xl sm:text-2xl text-primary">Read With Bob</p>
         <p className="mt-2">صُنعت بحب للقراء حول العالم — Developed by <span className="text-foreground font-medium">Ayoub Sadkouni</span></p>
       </footer>
     </div>

@@ -1,134 +1,23 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Star, Play, Pause, Square, BookOpen, Heart, AlertCircle } from "lucide-react";
+import { ArrowLeft, Star, BookOpen, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
 import { Header } from "@/components/Header";
 import { BookReader } from "@/components/BookReader";
 import { getBook, languages } from "@/data/books";
 import { useFavorites } from "@/lib/library-storage";
-
-const speechLangByBook = {
-  ar: "ar-SA",
-  fr: "fr-FR",
-  en: "en-US",
-  es: "es-ES",
-} as const;
-
-// Branded Arabic narrators — friendly labels mapped to common system voice names.
-const brandedArabicNarrators: { id: string; label: string; hints: string[] }[] = [
-  { id: "khaled", label: "خالد النجار", hints: ["Majed", "Maged"] },
-  { id: "islam", label: "إسلام عادل", hints: ["Tarik", "ar-EG"] },
-  { id: "taha", label: "طه الحاج أحمد", hints: ["Naayf", "ar-XA"] },
-];
-
-type Narrator = { id: string; label: string; voiceURI: string };
-type NarratorId = string;
-
 
 const BookDetail = () => {
   const { id } = useParams();
   const book = getBook(id ?? "");
   const { isFavorite, toggleFavorite } = useFavorites();
   const [reading, setReading] = useState(false);
-  const [playing, setPlaying] = useState(false);
-  const [paused, setPaused] = useState(false);
-  const [speechRate, setSpeechRate] = useState(0.95);
-  const [narrationPage, setNarrationPage] = useState(1);
-  const [narratorId, setNarratorId] = useState<NarratorId>("khaled");
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-
-  const speechActiveRef = useRef(false);
-  const narrationPageRef = useRef(0);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    const load = () => setVoices(window.speechSynthesis.getVoices());
-    load();
-    window.speechSynthesis.onvoiceschanged = load;
-    return () => {
-      window.speechSynthesis.onvoiceschanged = null;
-    };
-  }, []);
-
-  const stopNarration = (resetToStart = false) => {
-    speechActiveRef.current = false;
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-    }
-    setPlaying(false);
-    setPaused(false);
-    if (resetToStart) {
-      narrationPageRef.current = 0;
-      setNarrationPage(1);
-    }
-  };
-
-  useEffect(() => {
-    return () => {
-      speechActiveRef.current = false;
-      if (typeof window !== "undefined" && "speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (reading) stopNarration(false);
-  }, [reading]);
-
-  const bookLanguage = book?.language;
-  const speechLang = bookLanguage ? speechLangByBook[bookLanguage] : "en-US";
-
-  // Build the dynamic narrator list from every Arabic voice the browser exposes.
-  // Branded narrators (خالد، إسلام، طه) take priority when their underlying voices exist;
-  // any remaining Arabic voice is appended with a friendly auto-generated label.
-  const arabicNarrators = useMemo<Narrator[]>(() => {
-    const arabicVoices = voices.filter((v) => v.lang?.toLowerCase().startsWith("ar"));
-    if (!arabicVoices.length) return [];
-    const used = new Set<string>();
-    const result: Narrator[] = [];
-
-    for (const branded of brandedArabicNarrators) {
-      const matched = arabicVoices.find((v) =>
-        branded.hints.some(
-          (h) =>
-            v.name.toLowerCase().includes(h.toLowerCase()) ||
-            v.lang.toLowerCase().includes(h.toLowerCase())
-        )
-      );
-      if (matched && !used.has(matched.voiceURI)) {
-        result.push({ id: branded.id, label: branded.label, voiceURI: matched.voiceURI });
-        used.add(matched.voiceURI);
-      }
-    }
-
-    for (const v of arabicVoices) {
-      if (used.has(v.voiceURI)) continue;
-      result.push({ id: `voice-${v.voiceURI}`, label: `صوت ${v.name} — ${v.lang}`, voiceURI: v.voiceURI });
-      used.add(v.voiceURI);
-    }
-    return result;
-  }, [voices]);
-
-  const selectedVoice = useMemo(() => {
-    if (!voices.length || !bookLanguage) return null;
-    if (bookLanguage === "ar") {
-      // Strict: only narrator-mapped voices are allowed; never fall back to a default.
-      const narrator = arabicNarrators.find((n) => n.id === narratorId) ?? arabicNarrators[0];
-      if (!narrator) return null;
-      return voices.find((v) => v.voiceURI === narrator.voiceURI) ?? null;
-    }
-    const langPrefix = speechLang.split("-")[0];
-    const langVoices = voices.filter((v) => v.lang?.toLowerCase().startsWith(langPrefix));
-    return langVoices[0] ?? voices[0];
-  }, [voices, narratorId, bookLanguage, speechLang, arabicNarrators]);
 
   if (!book) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center px-4">
         <div className="text-center">
-          <p className="font-display text-3xl text-primary">الكتاب غير موجود</p>
+          <p className="font-display text-2xl sm:text-3xl text-primary">الكتاب غير موجود</p>
           <Button asChild className="mt-4"><Link to="/">العودة</Link></Button>
         </div>
       </div>
@@ -138,88 +27,11 @@ const BookDetail = () => {
   const isRTL = book.language === "ar";
   const lang = languages.find((l) => l.id === book.language);
 
-
-  const buildUtterance = (text: string) => {
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = speechLang;
-    u.rate = speechRate;
-    u.pitch = 1;
-    u.volume = 1;
-    if (selectedVoice) u.voice = selectedVoice;
-    return u;
-  };
-
-  const speakPage = (pageIndex: number) => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    const pageText = book.pages[pageIndex] ?? book.description;
-    if (!pageText) {
-      stopNarration(false);
-      return;
-    }
-    const utterance = buildUtterance(pageText);
-    utterance.onend = () => {
-      if (!speechActiveRef.current) return;
-      const nextIndex = pageIndex + 1;
-      if (nextIndex >= book.pages.length) {
-        stopNarration(false);
-        return;
-      }
-      narrationPageRef.current = nextIndex;
-      setNarrationPage(nextIndex + 1);
-      speakPage(nextIndex);
-    };
-    utterance.onerror = () => stopNarration(false);
-    window.speechSynthesis.speak(utterance);
-  };
-
-  const arabicVoiceMissing = book.language === "ar" && voices.length > 0 && !selectedVoice;
-
-  const handleAudioToggle = () => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    if (arabicVoiceMissing) return;
-
-    if (playing && !paused) {
-      window.speechSynthesis.pause();
-      setPaused(true);
-      return;
-    }
-    if (paused) {
-      window.speechSynthesis.resume();
-      setPaused(false);
-      return;
-    }
-
-    const startIndex = narrationPageRef.current;
-    speechActiveRef.current = true;
-    setPlaying(true);
-    setPaused(false);
-    setNarrationPage(startIndex + 1);
-    window.speechSynthesis.cancel();
-    speakPage(startIndex);
-  };
-
-  const jumpToPage = (page: number) => {
-    const clamped = Math.max(1, Math.min(book.pageCount, page));
-    const idx = clamped - 1;
-    narrationPageRef.current = idx;
-    setNarrationPage(clamped);
-    if (playing || paused) {
-      if (typeof window !== "undefined" && "speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-      }
-      speechActiveRef.current = true;
-      setPlaying(true);
-      setPaused(false);
-      speakPage(idx);
-    }
-  };
-
-
   return (
     <div className="min-h-screen">
       <Header />
-      <div className="container py-8">
-        <Button asChild variant="ghost" className="mb-6 -ml-2">
+      <div className="container py-4 sm:py-8 px-4 sm:px-6">
+        <Button asChild variant="ghost" className="mb-4 sm:mb-6 -ml-2 h-9">
           <Link to="/" className="flex items-center gap-2">
             <ArrowLeft className="h-4 w-4" />
             <span>العودة إلى المكتبة</span>
@@ -227,49 +39,46 @@ const BookDetail = () => {
         </Button>
 
         {!reading ? (
-          <div className="grid md:grid-cols-[300px_1fr] gap-12 items-start">
-            <div className="relative animate-float">
-              <img src={book.cover} alt={book.title} width={600} height={800} className="w-full rounded-md shadow-book book-spine" />
+          <div className="grid sm:grid-cols-[220px_1fr] md:grid-cols-[280px_1fr] gap-6 sm:gap-10 items-start">
+            <div className="relative animate-float mx-auto sm:mx-0 max-w-[200px] sm:max-w-none w-full">
+              <img
+                src={book.cover}
+                alt={book.title}
+                width={600}
+                height={800}
+                className="w-full rounded-md shadow-book book-spine"
+              />
             </div>
             <div className="animate-fade-up">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+              <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-muted-foreground mb-2">
                 <span>{lang?.flag}</span>
                 <span>{lang?.label}</span>
                 <span>·</span>
                 <span className="capitalize">{book.category}</span>
               </div>
-              <h1 className={`font-display text-4xl md:text-6xl text-primary leading-tight ${isRTL ? "font-arabic" : ""}`}>
+              <h1 className={`font-display text-3xl sm:text-4xl md:text-5xl text-primary leading-tight ${isRTL ? "font-arabic" : ""}`}>
                 {book.title}
               </h1>
-              <p className="text-xl text-muted-foreground mt-3">{book.author}</p>
-              <div className="flex items-center gap-1 mt-4">
+              <p className="text-base sm:text-xl text-muted-foreground mt-2">{book.author}</p>
+              <div className="flex items-center gap-1 mt-3">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star key={i} className={`h-4 w-4 ${i < Math.round(book.rating) ? "fill-accent text-accent" : "text-muted"}`} />
                 ))}
                 <span className="ml-2 text-sm text-muted-foreground">{book.rating} / 5</span>
               </div>
-              <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+              <div className="mt-3 flex flex-wrap items-center gap-3 text-xs sm:text-sm text-muted-foreground">
                 <span>{book.pageCount} صفحة</span>
-                {book.duration && <span>· {book.duration}</span>}
               </div>
-              <p className={`mt-6 text-lg leading-relaxed text-foreground/80 ${isRTL ? "font-arabic" : ""}`}>
+              <p className={`mt-4 sm:mt-6 text-base sm:text-lg leading-relaxed text-foreground/80 ${isRTL ? "font-arabic" : ""}`}>
                 {book.description}
               </p>
 
-              <div className="mt-8 flex flex-wrap gap-3">
-                {book.category === "audiobooks" && (
-                  <>
-                    <Button size="lg" onClick={handleAudioToggle} disabled={arabicVoiceMissing} className="bg-accent text-accent-foreground hover:bg-accent/90 font-display text-base shadow-book disabled:opacity-50">
-                      {playing && !paused ? <Pause className="h-5 w-5 mr-2" /> : <Play className="h-5 w-5 mr-2" />}
-                      {playing ? (paused ? "متابعة" : "إيقاف مؤقت") : "استمع الآن"}
-                    </Button>
-                    <Button size="lg" variant="outline" onClick={() => stopNarration(true)} disabled={!playing && !paused} className="font-display text-base">
-                      <Square className="h-5 w-5 mr-2" />
-                      إيقاف كامل
-                    </Button>
-                  </>
-                )}
-                <Button size="lg" onClick={() => setReading(true)} className="bg-primary text-primary-foreground hover:bg-primary/90 font-display text-base shadow-book">
+              <div className="mt-6 sm:mt-8 flex flex-wrap gap-3">
+                <Button
+                  size="lg"
+                  onClick={() => setReading(true)}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 font-display text-sm sm:text-base shadow-book h-11 sm:h-12 flex-1 sm:flex-none min-w-[140px]"
+                >
                   <BookOpen className="h-5 w-5 mr-2" />
                   اقرأ الكتاب
                 </Button>
@@ -277,94 +86,26 @@ const BookDetail = () => {
                   size="lg"
                   variant="outline"
                   onClick={() => toggleFavorite(book.id)}
-                  className="font-display text-base"
+                  className="font-display text-sm sm:text-base h-11 sm:h-12 flex-1 sm:flex-none min-w-[140px]"
                 >
                   <Heart className={`h-5 w-5 mr-2 ${isFavorite(book.id) ? "fill-primary text-primary" : ""}`} />
                   {isFavorite(book.id) ? "في المفضلة" : "أضف للمفضلة"}
                 </Button>
               </div>
-
-              {book.category === "audiobooks" && (
-                <div className="mt-6 p-4 rounded-lg bg-card border border-border shadow-soft">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-sm text-foreground">
-                      {playing || paused ? `جاري السرد من الصفحة ${narrationPage} من ${book.pageCount}` : `جاهز للاستماع إلى ${book.pageCount} صفحة`}
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">السرعة</span>
-                      {[0.85, 0.95, 1.1].map((rate) => (
-                        <button
-                          key={rate}
-                          onClick={() => setSpeechRate(rate)}
-                          className={`rounded-full border px-3 py-1 text-xs transition-smooth ${speechRate === rate ? "bg-accent text-accent-foreground border-accent" : "border-border text-muted-foreground hover:text-foreground"}`}
-                        >
-                          {rate}x
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {book.language === "ar" && (
-                    <div className="mt-4 flex flex-wrap items-center gap-2">
-                      <span className="text-xs text-muted-foreground">القارئ</span>
-                      {arabicNarrators.map((n) => (
-                        <button
-                          key={n.id}
-                          onClick={() => {
-                            setNarratorId(n.id);
-                            if (playing || paused) stopNarration(false);
-                          }}
-                          className={`rounded-full border px-3 py-1 text-xs transition-smooth font-arabic ${narratorId === n.id ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
-                        >
-                          {n.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {selectedVoice && (
-                    <p className="mt-2 text-[11px] text-muted-foreground">
-                      الصوت الحالي: {selectedVoice.name} ({selectedVoice.lang})
-                    </p>
-                  )}
-                  {arabicVoiceMissing && (
-                    <div className="mt-3 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
-                      <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-                      <span className="font-arabic leading-relaxed">
-                        صوت القارئ المختار غير متوفر على هذا الجهاز. جرّب اختيار قارئ آخر، أو ثبّت صوتًا عربيًا من إعدادات نظامك.
-                      </span>
-                    </div>
-                  )}
-                  <div className="mt-4 space-y-2">
-                    <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                      <span>الانتقال إلى صفحة</span>
-                      <span>{narrationPage} / {book.pageCount}</span>
-                    </div>
-                    <Slider
-                      value={[narrationPage]}
-                      min={1}
-                      max={book.pageCount}
-                      step={1}
-                      onValueChange={(val) => {
-                        const page = val[0] ?? 1;
-                        narrationPageRef.current = page - 1;
-                        setNarrationPage(page);
-                      }}
-                      onValueCommit={(val) => jumpToPage(val[0] ?? 1)}
-                    />
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         ) : (
           <div className="animate-fade-up">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className={`font-display text-2xl md:text-3xl text-primary ${isRTL ? "font-arabic" : ""}`}>
+            <div className="flex items-start justify-between gap-3 mb-4 sm:mb-6">
+              <div className="min-w-0">
+                <h2 className={`font-display text-xl sm:text-2xl md:text-3xl text-primary truncate ${isRTL ? "font-arabic" : ""}`}>
                   {book.title}
                 </h2>
-                <p className="text-sm text-muted-foreground mt-1">{book.pageCount} صفحة كاملة</p>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">{book.pageCount} صفحة كاملة</p>
               </div>
-              <Button variant="outline" onClick={() => setReading(false)}>إغلاق الكتاب</Button>
+              <Button variant="outline" size="sm" onClick={() => setReading(false)} className="shrink-0">
+                إغلاق
+              </Button>
             </div>
             <BookReader pages={book.pages} isRTL={isRTL} bookId={book.id} />
           </div>
