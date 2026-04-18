@@ -5,7 +5,7 @@ import stories from "@/assets/cover-stories.jpg";
 import audio from "@/assets/cover-audio.jpg";
 import novel from "@/assets/cover-novel.jpg";
 
-export type Category = "religious" | "philosophy" | "children" | "stories" | "audiobooks" | "novels";
+export type Category = "religious" | "philosophy" | "children" | "stories" | "novels";
 export type Lang = "ar" | "fr" | "en" | "es";
 type PageProfile = "short" | "medium" | "long" | "epic";
 
@@ -39,7 +39,6 @@ export const categories: { id: Category; label: string; labelEn: string; color: 
   { id: "philosophy", label: "فلسفة", labelEn: "Philosophy", color: "hsl(var(--cat-philosophy))", icon: "🏛️" },
   { id: "children", label: "أطفال", labelEn: "Children", color: "hsl(var(--cat-children))", icon: "🦊" },
   { id: "stories", label: "قصص قصيرة", labelEn: "Short Stories", color: "hsl(var(--cat-stories))", icon: "📖" },
-  { id: "audiobooks", label: "كتب صوتية", labelEn: "Audiobooks", color: "hsl(var(--cat-audio))", icon: "🎧" },
   { id: "novels", label: "روايات", labelEn: "Novels", color: "hsl(var(--cat-novel))", icon: "🌅" },
 ];
 
@@ -56,7 +55,6 @@ const coverFor = (cat: Category) => {
     case "philosophy": return philosophy;
     case "children": return childrenCover;
     case "stories": return stories;
-    case "audiobooks": return audio;
     case "novels": return novel;
   }
 };
@@ -73,7 +71,6 @@ const defaultProfileByCategory: Record<Category, PageProfile> = {
   philosophy: "long",
   children: "short",
   stories: "medium",
-  audiobooks: "long",
   novels: "epic",
 };
 
@@ -82,7 +79,6 @@ const arabicCategoryLabel: Record<Category, string> = {
   philosophy: "الفكر الفلسفي",
   children: "قصص الأطفال",
   stories: "القصص والسرد القصير",
-  audiobooks: "المكتبة الصوتية",
   novels: "الروايات",
 };
 
@@ -91,7 +87,6 @@ const englishCategoryLabel: Record<Category, string> = {
   philosophy: "philosophical thought",
   children: "children's stories",
   stories: "short stories",
-  audiobooks: "audiobook narration",
   novels: "novels",
 };
 
@@ -100,7 +95,6 @@ const frenchCategoryLabel: Record<Category, string> = {
   philosophy: "la pensée philosophique",
   children: "les récits pour enfants",
   stories: "les nouvelles",
-  audiobooks: "la narration audio",
   novels: "les romans",
 };
 
@@ -109,7 +103,6 @@ const spanishCategoryLabel: Record<Category, string> = {
   philosophy: "el pensamiento filosófico",
   children: "los cuentos infantiles",
   stories: "los relatos breves",
-  audiobooks: "la narración en audio",
   novels: "las novelas",
 };
 
@@ -855,15 +848,6 @@ const multilingualSeeds: Seed[] = [
 ];
 
 const allSeeds: Seed[] = [
-  ...arabicAudiobookTitles.map(([title, author, duration]) => ({
-    title,
-    author,
-    duration,
-    category: "audiobooks" as Category,
-    language: "ar" as Lang,
-    description: `كتاب صوتي عربي مطوّل بصوت مفعّل داخل المتصفح — ${author}.`,
-    pageProfile: "long" as PageProfile,
-  })),
   ...arabicPhilosophyTitles.map(([title, author]) => ({
     title,
     author,
