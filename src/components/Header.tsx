@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { BookOpen, Search, Library, X, Sun, Moon } from "lucide-react";
+import { BookOpen, Search, Library, X, Sun, Moon, Info } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks/use-theme";
+import { AboutDialog } from "@/components/AboutDialog";
 
 export const Header = ({ onSearch, search }: { onSearch?: (v: string) => void; search?: string }) => {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -88,10 +89,24 @@ export const Header = ({ onSearch, search }: { onSearch?: (v: string) => void; s
             {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
 
+          <AboutDialog
+            trigger={
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 shrink-0"
+                aria-label="حول التطبيق"
+                title="حول التطبيق"
+              >
+                <Info className="h-5 w-5" />
+              </Button>
+            }
+          />
+
           <Button asChild variant="ghost" size="sm" className="px-2 sm:px-3">
             <Link to="/my-books" className="flex items-center gap-1.5 sm:gap-2">
               <Library className="h-4 w-4" />
-              <span className="font-display text-sm sm:text-base">كتبي</span>
+              <span className="font-display text-sm sm:text-base hidden sm:inline">كتبي</span>
             </Link>
           </Button>
         </div>
