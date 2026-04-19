@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { BookOpen, Search, Library, X } from "lucide-react";
+import { BookOpen, Search, Library, X, Sun, Moon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useTheme } from "@/hooks/use-theme";
 
 export const Header = ({ onSearch, search }: { onSearch?: (v: string) => void; search?: string }) => {
   const [searchOpen, setSearchOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { theme, toggleTheme } = useTheme();
 
   // When opening the mobile search, focus after the overlay has mounted.
   useEffect(() => {
