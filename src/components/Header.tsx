@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { BookOpen, Search, Library, X, Sun, Moon, Info } from "lucide-react";
+import { BookOpen, Search, Library, X, Sun, Moon, Info, BookMarked } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks/use-theme";
@@ -78,16 +78,23 @@ export const Header = ({ onSearch, search }: { onSearch?: (v: string) => void; s
             </Button>
           )}
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleTheme}
-            className={`${onSearch ? "" : "ml-auto"} h-9 w-9 shrink-0`}
-            aria-label={theme === "dark" ? "وضع نهاري" : "وضع ليلي"}
-            title={theme === "dark" ? "وضع نهاري" : "وضع ليلي"}
-          >
-            {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </Button>
+          {(() => {
+            const nextLabel =
+              theme === "light" ? "وضع سيبيا" : theme === "sepia" ? "وضع ليلي" : "وضع نهاري";
+            const Icon = theme === "light" ? BookMarked : theme === "sepia" ? Moon : Sun;
+            return (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                className={`${onSearch ? "" : "ml-auto"} h-9 w-9 shrink-0`}
+                aria-label={nextLabel}
+                title={nextLabel}
+              >
+                <Icon className="h-5 w-5" />
+              </Button>
+            );
+          })()}
 
           <AboutDialog
             trigger={
