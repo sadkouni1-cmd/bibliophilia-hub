@@ -77,7 +77,18 @@ export const Header = ({ onSearch, search }: { onSearch?: (v: string) => void; s
             </Button>
           )}
 
-          <Button asChild variant="ghost" size="sm" className={onSearch ? "px-2 sm:px-3" : "ml-auto px-2 sm:px-3"}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className={`${onSearch ? "" : "ml-auto"} h-9 w-9 shrink-0`}
+            aria-label={theme === "dark" ? "وضع نهاري" : "وضع ليلي"}
+            title={theme === "dark" ? "وضع نهاري" : "وضع ليلي"}
+          >
+            {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </Button>
+
+          <Button asChild variant="ghost" size="sm" className="px-2 sm:px-3">
             <Link to="/my-books" className="flex items-center gap-1.5 sm:gap-2">
               <Library className="h-4 w-4" />
               <span className="font-display text-sm sm:text-base">كتبي</span>
