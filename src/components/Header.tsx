@@ -119,23 +119,13 @@ export const Header = ({ onSearch, search }: { onSearch?: (v: string) => void; s
         </div>
       </header>
 
-      {/* Mobile fullscreen search overlay — robust against keyboard layout shifts */}
+      {/* Mobile search bar — sits under the header, never covers the results */}
       {onSearch && searchOpen && (
         <div
-          className="md:hidden fixed inset-0 z-[100] bg-background flex flex-col animate-fade-in"
-          role="dialog"
-          aria-modal="true"
+          className="md:hidden sticky top-14 z-30 w-full border-b border-border/60 bg-background/95 backdrop-blur-md animate-fade-in"
+          role="search"
         >
-          <div className="flex items-center gap-2 px-3 py-3 border-b border-border/60 bg-background">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-10 w-10 shrink-0"
-              onClick={() => setSearchOpen(false)}
-              aria-label="إغلاق"
-            >
-              <X className="h-5 w-5" />
-            </Button>
+          <div className="container flex items-center gap-2 px-3 py-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
               <input
@@ -147,17 +137,22 @@ export const Header = ({ onSearch, search }: { onSearch?: (v: string) => void; s
                 enterKeyHint="search"
                 autoComplete="off"
                 style={{ fontSize: "16px" }}
-                className="w-full h-11 rounded-md border border-border/70 bg-card pl-9 pr-3 text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/40"
+                className="w-full h-10 rounded-md border border-border/70 bg-card pl-9 pr-3 text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/40"
               />
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 shrink-0"
+              onClick={() => {
+                setSearchOpen(false);
+                onSearch("");
+              }}
+              aria-label="إغلاق"
+            >
+              <X className="h-5 w-5" />
+            </Button>
           </div>
-          {/* Tap outside (below) to close */}
-          <button
-            type="button"
-            aria-label="إغلاق"
-            className="flex-1 bg-background/60"
-            onClick={() => setSearchOpen(false)}
-          />
         </div>
       )}
     </>
