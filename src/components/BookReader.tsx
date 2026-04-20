@@ -88,9 +88,9 @@ export const BookReader = ({ pages, isRTL, bookId }: { pages: string[]; isRTL: b
   const right = !isMobile ? pages[spread * pagesPerSpread + 1] : undefined;
 
   const Page = ({ text, pageNumber }: { text?: string; pageNumber: number }) => (
-    <div className="relative flex-1 paper-texture page-shadow p-5 sm:p-8 md:p-12 overflow-hidden">
+    <div className="relative flex-1 bg-card paper-texture page-shadow p-5 sm:p-8 md:p-12 overflow-hidden">
       <div
-        className={`h-full w-full overflow-y-auto ${isRTL ? "text-right font-arabic" : "text-left"} text-foreground/90 whitespace-pre-line ${FONT_SIZE_CLASS[fontSize]} pb-8`}
+        className={`h-full w-full overflow-y-auto ${isRTL ? "text-right font-arabic" : "text-left"} text-card-foreground whitespace-pre-line ${FONT_SIZE_CLASS[fontSize]} pb-8`}
       >
         {text}
       </div>
