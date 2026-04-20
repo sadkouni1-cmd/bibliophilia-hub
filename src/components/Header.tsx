@@ -11,16 +11,11 @@ export const Header = ({ onSearch, search }: { onSearch?: (v: string) => void; s
   const inputRef = useRef<HTMLInputElement>(null);
   const { theme, toggleTheme } = useTheme();
 
-  // When opening the mobile search, focus after the overlay has mounted.
+  // When opening the mobile search, focus the input.
   useEffect(() => {
     if (searchOpen) {
       const t = setTimeout(() => inputRef.current?.focus(), 50);
-      // Lock body scroll while overlay is open so the keyboard doesn't fight the page.
-      document.body.style.overflow = "hidden";
-      return () => {
-        clearTimeout(t);
-        document.body.style.overflow = "";
-      };
+      return () => clearTimeout(t);
     }
   }, [searchOpen]);
 
