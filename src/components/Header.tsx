@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { BookOpen, Search, Library, X, Sun, Moon, Info, BookMarked } from "lucide-react";
+import { BookOpen, Search, Library, X, Sun, Moon, Info } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks/use-theme";
 import { AboutDialog } from "@/components/AboutDialog";
+import { ThemePicker } from "@/components/ThemePicker";
 
 export const Header = ({ onSearch, search }: { onSearch?: (v: string) => void; search?: string }) => {
   const [searchOpen, setSearchOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
 
   // When opening the mobile search, bring the results into view then focus the input.
   useEffect(() => {
@@ -76,22 +77,24 @@ export const Header = ({ onSearch, search }: { onSearch?: (v: string) => void; s
           )}
 
           {(() => {
-            const nextLabel =
-              theme === "light" ? "وضع سيبيا" : theme === "sepia" ? "وضع ليلي" : "وضع نهاري";
-            const Icon = theme === "light" ? BookMarked : theme === "sepia" ? Moon : Sun;
+            const isDark = theme === "dark";
+            const Icon = isDark ? Sun : Moon;
+            const label = isDark ? "وضع نهاري" : "وضع ليلي";
             return (
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={toggleTheme}
+                onClick={() => (isDark ? setTheme("light") : setTheme("dark"))}
                 className={`${onSearch ? "" : "ml-auto"} h-9 w-9 shrink-0`}
-                aria-label={nextLabel}
-                title={nextLabel}
+                aria-label={label}
+                title={label}
               >
                 <Icon className="h-5 w-5" />
               </Button>
             );
           })()}
+
+          <ThemePicker />
 
           <AboutDialog
             trigger={
