@@ -135,7 +135,7 @@ export const BookReader = ({ pages, isRTL, bookId }: { pages: string[]; isRTL: b
       </div>
 
       <div
-        className="relative w-full max-w-5xl aspect-[3/4] sm:aspect-[16/10]"
+        className="relative w-full max-w-5xl h-[calc(100vh-13rem)] sm:h-auto sm:aspect-[16/10]"
         dir="ltr"
       >
         <div className="absolute inset-0 flex shadow-book rounded-lg overflow-hidden bg-gradient-page">
