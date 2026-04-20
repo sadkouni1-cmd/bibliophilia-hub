@@ -10,7 +10,7 @@ import { ThemePicker } from "@/components/ThemePicker";
 export const Header = ({ onSearch, search }: { onSearch?: (v: string) => void; search?: string }) => {
   const [searchOpen, setSearchOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
 
   // When opening the mobile search, bring the results into view then focus the input.
   useEffect(() => {
