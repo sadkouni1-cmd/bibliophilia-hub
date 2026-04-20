@@ -19,6 +19,8 @@ const Index = () => {
     });
   }, [activeCat, activeLang, search]);
 
+  const hasSearch = search.trim().length > 0;
+
   // Group by author when the user is inside a specific section (or searching),
   // so that each author appears as a header with their books listed beneath.
   const groupedByAuthor = useMemo(() => {
@@ -36,9 +38,10 @@ const Index = () => {
   return (
     <div className="min-h-screen">
       <Header onSearch={setSearch} search={search} />
-      <Hero />
 
-      <main id="library" className="container py-10 sm:py-16 px-4 sm:px-6">
+      {!hasSearch && <Hero />}
+
+      <main id="library" className={cn("container px-4 sm:px-6", hasSearch ? "py-6 sm:py-8" : "py-10 sm:py-16")}>
         {/* Category strip */}
         <div className="mb-6 sm:mb-8">
           <h2 className="font-display text-2xl sm:text-3xl md:text-4xl text-primary mb-1 sm:mb-2">الأقسام</h2>

@@ -11,12 +11,14 @@ export const Header = ({ onSearch, search }: { onSearch?: (v: string) => void; s
   const inputRef = useRef<HTMLInputElement>(null);
   const { theme, toggleTheme } = useTheme();
 
-  // When opening the mobile search, focus the input.
+  // When opening the mobile search, bring the results into view then focus the input.
   useEffect(() => {
-    if (searchOpen) {
-      const t = setTimeout(() => inputRef.current?.focus(), 50);
-      return () => clearTimeout(t);
-    }
+    if (!searchOpen) return;
+
+    document.getElementById("library")?.scrollIntoView({ block: "start" });
+    const t = setTimeout(() => inputRef.current?.focus(), 50);
+
+    return () => clearTimeout(t);
   }, [searchOpen]);
 
   // Close on Escape
