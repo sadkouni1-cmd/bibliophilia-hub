@@ -5,12 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Header } from "@/components/Header";
 import { BookReader } from "@/components/BookReader";
 import { getBook, languages } from "@/data/books";
-import { useFavorites } from "@/lib/library-storage";
+import { useIsFavorite, toggleFavorite } from "@/lib/library-storage";
 
 const BookDetail = () => {
   const { id } = useParams();
   const book = getBook(id ?? "");
-  const { isFavorite, toggleFavorite } = useFavorites();
+  const fav = useIsFavorite(book?.id ?? "");
   const [reading, setReading] = useState(false);
 
   if (!book) {
@@ -93,8 +93,8 @@ const BookDetail = () => {
                   onClick={() => toggleFavorite(book.id)}
                   className="font-display text-sm sm:text-base h-11 sm:h-12 flex-1 sm:flex-none min-w-[140px]"
                 >
-                  <Heart className={`h-5 w-5 mr-2 ${isFavorite(book.id) ? "fill-primary text-primary" : ""}`} />
-                  {isFavorite(book.id) ? "في المفضلة" : "أضف للمفضلة"}
+                  <Heart className={`h-5 w-5 mr-2 ${fav ? "fill-primary text-primary" : ""}`} />
+                  {fav ? "في المفضلة" : "أضف للمفضلة"}
                 </Button>
               </div>
             </div>
