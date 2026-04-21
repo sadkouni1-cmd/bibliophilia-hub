@@ -57,7 +57,7 @@
     --shadow-soft: 0 4px 20px -4px hsl(24 30% 20% / 0.15);
     --shadow-page: inset 0 0 60px hsl(36 30% 75% / 0.4);
 
-    --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
     --sidebar-background: 36 30% 92%;
     --sidebar-foreground: 24 24% 14%;
@@ -291,3 +291,12 @@
   }
   .page-shadow { box-shadow: var(--shadow-page); }
 }
+
+/* Snappier taps on touch devices: kill 300ms delay & remove heavy hover transforms on mobile */
+@media (hover: none) {
+  .group:hover .group-hover\:-translate-y-2 { transform: none !important; }
+  .group:hover .group-hover\:rotate-1 { transform: none !important; }
+  .group:hover .group-hover\:scale-105 { transform: none !important; }
+  .group:hover .group-hover\:scale-110 { transform: none !important; }
+}
+a, button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
