@@ -31,9 +31,14 @@ const BookDetail = () => {
     <div className="min-h-screen">
       <Header />
       <div className="container py-4 sm:py-8 px-4 sm:px-6">
-        <Button asChild variant="ghost" className="mb-4 sm:mb-6 -ml-2 h-9">
+        <Button
+          asChild
+          variant="default"
+          size="lg"
+          className="mb-4 sm:mb-6 bg-primary text-primary-foreground hover:bg-primary/90 shadow-soft font-display h-11 px-5"
+        >
           <Link to="/" className="flex items-center gap-2">
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-5 w-5" />
             <span>العودة إلى المكتبة</span>
           </Link>
         </Button>

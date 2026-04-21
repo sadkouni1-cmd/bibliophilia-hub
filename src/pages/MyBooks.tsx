@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Heart, BookOpen, Trash2 } from "lucide-react";
+import { Heart, BookOpen, Trash2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/Header";
 import { BookCard } from "@/components/BookCard";
@@ -27,9 +27,20 @@ const MyBooks = () => {
   return (
     <div className="min-h-screen">
       <Header />
-      <main className="container py-12">
-        <div className="mb-12 text-center">
-          <h1 className="font-display text-5xl md:text-6xl text-primary">كتبي</h1>
+      <main className="container py-8 sm:py-12 px-4 sm:px-6">
+        <Button
+          asChild
+          variant="default"
+          size="lg"
+          className="mb-6 bg-primary text-primary-foreground hover:bg-primary/90 shadow-soft font-display h-11 px-5"
+        >
+          <Link to="/" className="flex items-center gap-2">
+            <ArrowLeft className="h-5 w-5" />
+            <span>العودة إلى المكتبة</span>
+          </Link>
+        </Button>
+        <div className="mb-10 sm:mb-12 text-center">
+          <h1 className="font-display text-4xl sm:text-5xl md:text-6xl text-primary">كتبي</h1>
           <p className="text-muted-foreground mt-3">المفضلة وآخر صفحة قُرئت — محفوظة على جهازك</p>
         </div>
 
