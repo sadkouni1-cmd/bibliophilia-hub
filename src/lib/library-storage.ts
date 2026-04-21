@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
 const FAVORITES_KEY = "rwb:favorites";
 const PROGRESS_KEY = "rwb:progress";
@@ -25,46 +25,71 @@ const writeJSON = (key: string, value: unknown) => {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
-    window.dispatchEvent(new CustomEvent("rwb:storage"));
   } catch {
     /* ignore */
   }
 };
 
+/* ---------- Favorites: single shared store + per-id subscription ---------- */
+
+let favoritesState: string[] = readJSON<string[]>(FAVORITES_KEY, []);
+const favListeners = new Set<() => void>();
+
+const emitFav = () => favListeners.forEach((l) => l());
+
+const subscribeFav = (cb: () => void) => {
+  favListeners.add(cb);
+  return () => favListeners.delete(cb);
+};
+
+export const toggleFavorite = (id: string) => {
+  favoritesState = favoritesState.includes(id)
+    ? favoritesState.filter((x) => x !== id)
+    : [...favoritesState, id];
+  writeJSON(FAVORITES_KEY, favoritesState);
+  emitFav();
+};
+
+// Cross-tab sync
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (e.key !== FAVORITES_KEY) return;
+    favoritesState = readJSON<string[]>(FAVORITES_KEY, []);
+    emitFav();
+  });
+}
+
+// Subscribe only to the favorite-status of ONE book — re-renders only when THIS id flips.
+export const useIsFavorite = (id: string) => {
+  return useSyncExternalStore(
+    subscribeFav,
+    () => favoritesState.includes(id),
+    () => false,
+  );
+};
+
+// For pages that need the full list (MyBooks)
 export const useFavorites = () => {
-  const [favorites, setFavorites] = useState<string[]>(() => readJSON<string[]>(FAVORITES_KEY, []));
-
-  useEffect(() => {
-    const sync = () => setFavorites(readJSON<string[]>(FAVORITES_KEY, []));
-    window.addEventListener("rwb:storage", sync);
-    window.addEventListener("storage", sync);
-    return () => {
-      window.removeEventListener("rwb:storage", sync);
-      window.removeEventListener("storage", sync);
-    };
-  }, []);
-
+  const favorites = useSyncExternalStore(
+    subscribeFav,
+    () => favoritesState,
+    () => favoritesState,
+  );
   const isFavorite = useCallback((id: string) => favorites.includes(id), [favorites]);
-
-  const toggleFavorite = useCallback((id: string) => {
-    const current = readJSON<string[]>(FAVORITES_KEY, []);
-    const next = current.includes(id) ? current.filter((x) => x !== id) : [...current, id];
-    writeJSON(FAVORITES_KEY, next);
-    setFavorites(next);
-  }, []);
-
   return { favorites, isFavorite, toggleFavorite };
 };
+
+/* ---------- Progress (unchanged behavior) ---------- */
 
 export const useProgressMap = () => {
   const [progress, setProgress] = useState<ProgressMap>(() => readJSON<ProgressMap>(PROGRESS_KEY, {}));
 
   useEffect(() => {
     const sync = () => setProgress(readJSON<ProgressMap>(PROGRESS_KEY, {}));
-    window.addEventListener("rwb:storage", sync);
+    window.addEventListener("rwb:progress", sync);
     window.addEventListener("storage", sync);
     return () => {
-      window.removeEventListener("rwb:storage", sync);
+      window.removeEventListener("rwb:progress", sync);
       window.removeEventListener("storage", sync);
     };
   }, []);
@@ -81,10 +106,12 @@ export const saveProgress = (id: string, spread: number, totalSpreads: number) =
   const map = readJSON<ProgressMap>(PROGRESS_KEY, {});
   map[id] = { spread, totalSpreads, updatedAt: Date.now() };
   writeJSON(PROGRESS_KEY, map);
+  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("rwb:progress"));
 };
 
 export const clearProgress = (id: string) => {
   const map = readJSON<ProgressMap>(PROGRESS_KEY, {});
   delete map[id];
   writeJSON(PROGRESS_KEY, map);
+  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("rwb:progress"));
 };
