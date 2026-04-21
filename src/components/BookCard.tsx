@@ -1,10 +1,9 @@
-import { memo } from "react";
 import { Link } from "react-router-dom";
 import { Star, Heart } from "lucide-react";
 import type { Book } from "@/data/books";
 import { useFavorites } from "@/lib/library-storage";
 
-export const BookCard = memo(({ book }: { book: Book }) => {
+export const BookCard = ({ book }: { book: Book }) => {
   const { isFavorite, toggleFavorite } = useFavorites();
   const fav = isFavorite(book.id);
 
@@ -52,6 +51,4 @@ export const BookCard = memo(({ book }: { book: Book }) => {
     </Link>
     </div>
   );
-});
-
-BookCard.displayName = "BookCard";
+};
