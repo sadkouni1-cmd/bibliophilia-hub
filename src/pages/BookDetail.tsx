@@ -64,7 +64,12 @@ const BookDetail = () => {
               <h1 className={`font-display text-3xl sm:text-4xl md:text-5xl text-primary leading-tight ${isRTL ? "font-arabic" : ""}`}>
                 {book.title}
               </h1>
-              <p className="text-base sm:text-xl text-muted-foreground mt-2">{book.author}</p>
+              <Link
+                to={`/author/${encodeURIComponent(book.author)}`}
+                className="inline-block text-base sm:text-xl text-muted-foreground hover:text-primary hover:underline transition-smooth mt-2"
+              >
+                {book.author}
+              </Link>
               <div className="flex items-center gap-1 mt-3">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star key={i} className={`h-4 w-4 ${i < Math.round(book.rating) ? "fill-accent text-accent" : "text-muted"}`} />

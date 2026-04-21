@@ -41,14 +41,21 @@ const BookCardImpl = ({ book }: { book: Book }) => {
           <h3 className="font-display text-lg leading-tight text-foreground line-clamp-2 group-hover:text-primary transition-smooth">
             {book.title}
           </h3>
-          <p className="text-xs text-muted-foreground mt-1">{book.author}</p>
-          <div className="flex items-center gap-1 mt-1.5">
-            <Star className="h-3 w-3 fill-accent text-accent" />
-            <span className="text-xs text-muted-foreground">{book.rating}</span>
-            {book.duration && <span className="text-xs text-muted-foreground ml-2">• {book.duration}</span>}
-          </div>
         </div>
-    </Link>
+      </Link>
+      <div className="px-1">
+        <Link
+          to={`/author/${encodeURIComponent(book.author)}`}
+          className="text-xs text-muted-foreground hover:text-primary hover:underline transition-smooth inline-block mt-1"
+        >
+          {book.author}
+        </Link>
+        <div className="flex items-center gap-1 mt-1.5">
+          <Star className="h-3 w-3 fill-accent text-accent" />
+          <span className="text-xs text-muted-foreground">{book.rating}</span>
+          {book.duration && <span className="text-xs text-muted-foreground ml-2">• {book.duration}</span>}
+        </div>
+      </div>
     </div>
   );
 };
