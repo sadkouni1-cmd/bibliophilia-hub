@@ -5,7 +5,7 @@ import stories from "@/assets/cover-stories.jpg";
 import audio from "@/assets/cover-audio.jpg";
 import novel from "@/assets/cover-novel.jpg";
 
-export type Category = "religious" | "philosophy" | "children" | "stories" | "novels" | "selfdev" | "trending";
+export type Category = "religious" | "philosophy" | "children" | "stories" | "novels" | "selfdev" | "trending" | "science";
 export type Lang = "ar" | "fr" | "en" | "es";
 type PageProfile = "short" | "medium" | "long" | "epic";
 
@@ -39,6 +39,7 @@ export const categories: { id: Category; label: string; labelEn: string; color: 
   { id: "religious", label: "ديني", labelEn: "Religious", color: "hsl(var(--cat-religious))", icon: "📿" },
   { id: "philosophy", label: "فلسفة", labelEn: "Philosophy", color: "hsl(var(--cat-philosophy))", icon: "🏛️" },
   { id: "selfdev", label: "تنمية ذاتية", labelEn: "Self-Development", color: "hsl(var(--cat-audio))", icon: "🌱" },
+  { id: "science", label: "صحة وعلوم", labelEn: "Health & Science", color: "hsl(var(--cat-children))", icon: "🔬" },
   { id: "children", label: "أطفال", labelEn: "Children", color: "hsl(var(--cat-children))", icon: "🦊" },
   { id: "stories", label: "قصص قصيرة", labelEn: "Short Stories", color: "hsl(var(--cat-stories))", icon: "📖" },
   { id: "novels", label: "روايات", labelEn: "Novels", color: "hsl(var(--cat-novel))", icon: "🌅" },
@@ -60,6 +61,7 @@ const coverFor = (cat: Category) => {
     case "novels": return novel;
     case "selfdev": return audio;
     case "trending": return novel;
+    case "science": return philosophy;
   }
 };
 
@@ -78,6 +80,7 @@ const defaultProfileByCategory: Record<Category, PageProfile> = {
   novels: "epic",
   selfdev: "long",
   trending: "long",
+  science: "long",
 };
 
 const arabicCategoryLabel: Record<Category, string> = {
@@ -88,6 +91,7 @@ const arabicCategoryLabel: Record<Category, string> = {
   novels: "الروايات",
   selfdev: "التنمية الذاتية والنجاح",
   trending: "الكتب الأكثر رواجًا",
+  science: "الصحة والعلوم",
 };
 
 const englishCategoryLabel: Record<Category, string> = {
@@ -98,6 +102,7 @@ const englishCategoryLabel: Record<Category, string> = {
   novels: "novels",
   selfdev: "self-development",
   trending: "trending books",
+  science: "health & science",
 };
 
 const frenchCategoryLabel: Record<Category, string> = {
@@ -108,6 +113,7 @@ const frenchCategoryLabel: Record<Category, string> = {
   novels: "les romans",
   selfdev: "le développement personnel",
   trending: "les livres tendance",
+  science: "la santé et la science",
 };
 
 const spanishCategoryLabel: Record<Category, string> = {
@@ -118,6 +124,7 @@ const spanishCategoryLabel: Record<Category, string> = {
   novels: "las novelas",
   selfdev: "el desarrollo personal",
   trending: "los libros tendencia",
+  science: "la salud y la ciencia",
 };
 
 const arParagraphs = [
