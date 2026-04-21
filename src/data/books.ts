@@ -1823,6 +1823,7 @@ const allSeeds: Seed[] = [
   })),
   ...multilingualSeeds,
   ...extraMultilingualSeeds,
+  ...bonusSeeds,
 ];
 
 export const books: Book[] = allSeeds.map((seed, index) => ({
