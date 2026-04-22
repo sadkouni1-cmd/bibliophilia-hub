@@ -5,7 +5,7 @@ import stories from "@/assets/cover-stories.jpg";
 import audio from "@/assets/cover-audio.jpg";
 import novel from "@/assets/cover-novel.jpg";
 
-export type Category = "religious" | "philosophy" | "children" | "stories" | "novels" | "selfdev" | "trending" | "science";
+export type Category = "religious" | "philosophy" | "children" | "stories" | "novels" | "selfdev" | "trending" | "science" | "truestory";
 export type Lang = "ar" | "fr" | "en" | "es";
 type PageProfile = "short" | "medium" | "long" | "epic";
 
@@ -43,6 +43,7 @@ export const categories: { id: Category; label: string; labelEn: string; color: 
   { id: "children", label: "أطفال", labelEn: "Children", color: "hsl(var(--cat-children))", icon: "🦊" },
   { id: "stories", label: "قصص قصيرة", labelEn: "Short Stories", color: "hsl(var(--cat-stories))", icon: "📖" },
   { id: "novels", label: "روايات", labelEn: "Novels", color: "hsl(var(--cat-novel))", icon: "🌅" },
+  { id: "truestory", label: "قصص حقيقية", labelEn: "True Stories", color: "hsl(var(--cat-stories))", icon: "📜" },
 ];
 
 export const languages: { id: Lang; label: string; flag: string }[] = [
@@ -62,6 +63,7 @@ const coverFor = (cat: Category) => {
     case "selfdev": return audio;
     case "trending": return novel;
     case "science": return philosophy;
+    case "truestory": return stories;
   }
 };
 
@@ -81,6 +83,7 @@ const defaultProfileByCategory: Record<Category, PageProfile> = {
   selfdev: "long",
   trending: "long",
   science: "long",
+  truestory: "long",
 };
 
 const arabicCategoryLabel: Record<Category, string> = {
@@ -92,6 +95,7 @@ const arabicCategoryLabel: Record<Category, string> = {
   selfdev: "التنمية الذاتية والنجاح",
   trending: "الكتب الأكثر رواجًا",
   science: "الصحة والعلوم",
+  truestory: "القصص الحقيقية والسير",
 };
 
 const englishCategoryLabel: Record<Category, string> = {
@@ -103,6 +107,7 @@ const englishCategoryLabel: Record<Category, string> = {
   selfdev: "self-development",
   trending: "trending books",
   science: "health & science",
+  truestory: "true stories & memoirs",
 };
 
 const frenchCategoryLabel: Record<Category, string> = {
@@ -114,6 +119,7 @@ const frenchCategoryLabel: Record<Category, string> = {
   selfdev: "le développement personnel",
   trending: "les livres tendance",
   science: "la santé et la science",
+  truestory: "les histoires vraies et mémoires",
 };
 
 const spanishCategoryLabel: Record<Category, string> = {
@@ -125,6 +131,7 @@ const spanishCategoryLabel: Record<Category, string> = {
   selfdev: "el desarrollo personal",
   trending: "los libros tendencia",
   science: "la salud y la ciencia",
+  truestory: "las historias reales y memorias",
 };
 
 const arParagraphs = [
