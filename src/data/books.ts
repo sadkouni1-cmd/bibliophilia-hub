@@ -2016,7 +2016,7 @@ const trueStorySeeds: Seed[] = trueStoryRaw.map(([title, author, language]) => {
   };
 });
 
-
+const allSeeds: Seed[] = [
   ...arabicPhilosophyTitles.map(([title, author]) => ({
     title,
     author,
