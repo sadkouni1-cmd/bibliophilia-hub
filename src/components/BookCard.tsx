@@ -8,7 +8,7 @@ const BookCardImpl = ({ book }: { book: Book }) => {
   const fav = useIsFavorite(book.id);
 
   return (
-    <div className="group block animate-fade-up relative">
+    <div className="group block relative [content-visibility:auto] [contain-intrinsic-size:320px]">
       <button
         onClick={(e) => {
           e.preventDefault();

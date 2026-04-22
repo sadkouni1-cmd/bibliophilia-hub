@@ -1,39 +1,81 @@
-import { useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { BookCard } from "@/components/BookCard";
 import { books, categories, languages, type Category, type Lang } from "@/data/books";
 import { cn } from "@/lib/utils";
 
+const INITIAL_VISIBLE_BOOKS = 48;
+const BOOKS_PER_BATCH = 72;
+
 const Index = () => {
   const [activeCat, setActiveCat] = useState<Category | "all">("all");
   const [activeLang, setActiveLang] = useState<Lang | "all">("all");
   const [search, setSearch] = useState("");
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_BOOKS);
+  const deferredActiveCat = useDeferredValue(activeCat);
+  const deferredActiveLang = useDeferredValue(activeLang);
+  const deferredSearch = useDeferredValue(search);
 
   const filtered = useMemo(() => {
+    const query = deferredSearch.trim().toLowerCase();
+
     return books.filter((b) => {
-      if (activeCat !== "all" && b.category !== activeCat) return false;
-      if (activeLang !== "all" && b.language !== activeLang) return false;
-      if (search && !`${b.title} ${b.author}`.toLowerCase().includes(search.toLowerCase())) return false;
+      if (deferredActiveCat !== "all" && b.category !== deferredActiveCat) return false;
+      if (deferredActiveLang !== "all" && b.language !== deferredActiveLang) return false;
+      if (query && !`${b.title} ${b.author}`.toLowerCase().includes(query)) return false;
       return true;
     });
-  }, [activeCat, activeLang, search]);
+  }, [deferredActiveCat, deferredActiveLang, deferredSearch]);
+
+  useEffect(() => {
+    const nextVisible = Math.min(INITIAL_VISIBLE_BOOKS, filtered.length);
+    setVisibleCount(nextVisible);
+
+    if (filtered.length <= nextVisible) return;
+
+    let cancelled = false;
+    let timeoutId = 0;
+
+    const scheduleNextBatch = () => {
+      timeoutId = window.setTimeout(() => {
+        if (cancelled) return;
+
+        setVisibleCount((current) => {
+          const next = Math.min(current + BOOKS_PER_BATCH, filtered.length);
+          if (next < filtered.length) scheduleNextBatch();
+          return next;
+        });
+      }, 24);
+    };
+
+    scheduleNextBatch();
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [filtered]);
+
+  const displayedBooks = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
 
   const hasSearch = search.trim().length > 0;
+  const isUpdatingResults =
+    activeCat !== deferredActiveCat || activeLang !== deferredActiveLang || search !== deferredSearch;
 
   // Group by author when the user is inside a specific section (or searching),
   // so that each author appears as a header with their books listed beneath.
   const groupedByAuthor = useMemo(() => {
-    if (activeCat === "all" && !search) return null;
-    const map = new Map<string, typeof filtered>();
-    for (const b of filtered) {
+    if (deferredActiveCat === "all" && !deferredSearch.trim()) return null;
+    const map = new Map<string, typeof displayedBooks>();
+    for (const b of displayedBooks) {
       const list = map.get(b.author) ?? [];
       list.push(b);
       map.set(b.author, list);
     }
     return Array.from(map.entries())
       .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], "ar"));
-  }, [filtered, activeCat, search]);
+  }, [displayedBooks, deferredActiveCat, deferredSearch]);
 
   return (
     <div className="min-h-screen">
@@ -106,7 +148,7 @@ const Index = () => {
             <p className="font-display text-xl sm:text-2xl">لا توجد كتب مطابقة</p>
           </div>
         ) : groupedByAuthor ? (
-          <div className="space-y-10 sm:space-y-12">
+          <div className="space-y-10 sm:space-y-12" aria-busy={isUpdatingResults}>
             {groupedByAuthor.map(([author, list]) => (
               <section key={author} className="animate-fade-up">
                 <div className="flex items-baseline justify-between mb-3 sm:mb-4 border-b border-border/60 pb-2 gap-3">
@@ -122,8 +164,8 @@ const Index = () => {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 sm:gap-x-6 gap-y-8 sm:gap-y-10">
-            {filtered.map((b) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 sm:gap-x-6 gap-y-8 sm:gap-y-10" aria-busy={isUpdatingResults}>
+            {displayedBooks.map((b) => (
               <BookCard key={b.id} book={b} />
             ))}
           </div>
