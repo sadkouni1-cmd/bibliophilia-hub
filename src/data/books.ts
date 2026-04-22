@@ -1831,6 +1831,7 @@ const allSeeds: Seed[] = [
   ...multilingualSeeds,
   ...extraMultilingualSeeds,
   ...bonusSeeds,
+  ...trueStorySeeds,
 ];
 
 export const books: Book[] = allSeeds.map((seed, index) => ({
