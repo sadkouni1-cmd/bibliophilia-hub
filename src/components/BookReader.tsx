@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, AArrowDown, AArrowUp, Type } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getProgress, saveProgress } from "@/lib/library-storage";
+import { TranslatePopover } from "@/components/TranslatePopover";
 
 type FontSize = "sm" | "md" | "lg" | "xl";
 
@@ -31,8 +32,20 @@ function loadFontSize(): FontSize {
   return v && FONT_SIZE_ORDER.includes(v) ? v : "md";
 }
 
-export const BookReader = ({ pages, isRTL, bookId }: { pages: string[]; isRTL: boolean; bookId?: string }) => {
+export const BookReader = ({
+  pages,
+  isRTL,
+  bookId,
+  language,
+}: {
+  pages: string[];
+  isRTL: boolean;
+  bookId?: string;
+  language?: string;
+}) => {
   const isMobile = useIsMobile();
+  const spreadRef = useRef<HTMLDivElement>(null);
+  const translateLang = language && language !== "ar" ? language : null;
   // On mobile we show 1 page per "spread"; on desktop we show 2 pages per spread.
   const pagesPerSpread = isMobile ? 1 : 2;
   const totalSpreads = Math.max(1, Math.ceil(pages.length / pagesPerSpread));
@@ -135,6 +148,7 @@ export const BookReader = ({ pages, isRTL, bookId }: { pages: string[]; isRTL: b
       </div>
 
       <div
+        ref={spreadRef}
         className="relative w-full max-w-5xl h-[calc(100vh-13rem)] sm:h-auto sm:aspect-[16/10]"
         dir="ltr"
       >
@@ -148,7 +162,14 @@ export const BookReader = ({ pages, isRTL, bookId }: { pages: string[]; isRTL: b
             </>
           )}
         </div>
+        {translateLang && <TranslatePopover sourceLang={translateLang} containerRef={spreadRef} />}
       </div>
+
+      {translateLang && (
+        <p className="text-[11px] sm:text-xs text-muted-foreground text-center -mt-2">
+          💡 حدّد أي كلمة أو جملة لترجمتها إلى العربية
+        </p>
+      )}
 
       <div className="flex items-center gap-3 sm:gap-6 w-full justify-center">
         <Button
