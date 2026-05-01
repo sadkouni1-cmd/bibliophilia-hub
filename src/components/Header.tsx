@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { BookOpen, Search, Library, X, Sun, Moon, Info } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,12 @@ import { AboutDialog } from "@/components/AboutDialog";
 import { ThemePicker } from "@/components/ThemePicker";
 
 export const Header = ({ onSearch, search }: { onSearch?: (v: string) => void; search?: string }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isHome = location.pathname === "/";
+  // On non-home pages we still show a search icon — clicking it sends the user
+  // to the home library and auto-opens the search bar there.
+  const hasInlineSearch = typeof onSearch === "function";
   const [searchOpen, setSearchOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { theme, setTheme } = useTheme();
