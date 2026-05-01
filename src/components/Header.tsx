@@ -56,31 +56,38 @@ export const Header = ({ onSearch, search }: { onSearch?: (v: string) => void; s
             </div>
           </Link>
 
-          {/* Desktop search */}
-          {onSearch && (
+          {/* Desktop search (only when an onSearch handler is provided) */}
+          {hasInlineSearch && (
             <div className="ml-auto hidden md:flex flex-1 max-w-md relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 value={search}
-                onChange={(e) => onSearch(e.target.value)}
+                onChange={(e) => onSearch!(e.target.value)}
                 placeholder="ابحث عن كتاب أو مؤلف..."
                 className="pl-9 bg-card/60 border-border/70"
               />
             </div>
           )}
 
-          {/* Mobile search toggle */}
-          {onSearch && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden ml-auto h-9 w-9"
-              onClick={() => setSearchOpen(true)}
-              aria-label="بحث"
-            >
-              <Search className="h-5 w-5" />
-            </Button>
-          )}
+          {/* Mobile search toggle (always shown). On non-home pages it
+              navigates to home and auto-opens the search bar there. */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className={`${hasInlineSearch ? "md:hidden" : ""} ${!hasInlineSearch ? "ml-auto" : "ml-auto md:ml-0"} h-9 w-9`}
+            onClick={() => {
+              if (hasInlineSearch) {
+                setSearchOpen(true);
+              } else {
+                navigate("/?focusSearch=1");
+              }
+            }}
+            aria-label="بحث"
+            title="بحث"
+          >
+            <Search className="h-5 w-5" />
+          </Button>
+
 
           {(() => {
             const isDark = theme === "dark";
