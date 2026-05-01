@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, AArrowDown, AArrowUp, Type } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getProgress, saveProgress } from "@/lib/library-storage";
+import { TranslatePopover } from "@/components/TranslatePopover";
 
 type FontSize = "sm" | "md" | "lg" | "xl";
 
