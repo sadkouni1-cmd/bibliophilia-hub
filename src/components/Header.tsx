@@ -38,6 +38,29 @@ export const Header = ({ onSearch, search }: { onSearch?: (v: string) => void; s
     return () => window.removeEventListener("keydown", onKey);
   }, [searchOpen]);
 
+  // Auto-open / focus the search when the user lands on home with ?focusSearch=1
+  // (used when clicking the search icon from non-home pages).
+  useEffect(() => {
+    if (!isHome || !hasInlineSearch) return;
+    const params = new URLSearchParams(location.search);
+    if (params.get("focusSearch") !== "1") return;
+
+    setSearchOpen(true);
+    const t = setTimeout(() => {
+      // Desktop: focus the always-visible input
+      const desktopInput = document.querySelector<HTMLInputElement>(
+        'header input[placeholder="ابحث عن كتاب أو مؤلف..."]'
+      );
+      desktopInput?.focus();
+    }, 80);
+
+    // Clean the query param so refresh doesn't re-trigger
+    const cleaned = location.pathname + location.hash;
+    navigate(cleaned, { replace: true });
+    return () => clearTimeout(t);
+  }, [isHome, hasInlineSearch, location.search, location.pathname, location.hash, navigate]);
+
+
   return (
     <>
       <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/85 backdrop-blur-md">
