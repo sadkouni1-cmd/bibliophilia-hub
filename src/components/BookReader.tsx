@@ -32,8 +32,20 @@ function loadFontSize(): FontSize {
   return v && FONT_SIZE_ORDER.includes(v) ? v : "md";
 }
 
-export const BookReader = ({ pages, isRTL, bookId }: { pages: string[]; isRTL: boolean; bookId?: string }) => {
+export const BookReader = ({
+  pages,
+  isRTL,
+  bookId,
+  language,
+}: {
+  pages: string[];
+  isRTL: boolean;
+  bookId?: string;
+  language?: string;
+}) => {
   const isMobile = useIsMobile();
+  const spreadRef = useRef<HTMLDivElement>(null);
+  const translateLang = language && language !== "ar" ? language : null;
   // On mobile we show 1 page per "spread"; on desktop we show 2 pages per spread.
   const pagesPerSpread = isMobile ? 1 : 2;
   const totalSpreads = Math.max(1, Math.ceil(pages.length / pagesPerSpread));
