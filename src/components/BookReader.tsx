@@ -148,6 +148,7 @@ export const BookReader = ({
       </div>
 
       <div
+        ref={spreadRef}
         className="relative w-full max-w-5xl h-[calc(100vh-13rem)] sm:h-auto sm:aspect-[16/10]"
         dir="ltr"
       >
@@ -161,7 +162,14 @@ export const BookReader = ({
             </>
           )}
         </div>
+        {translateLang && <TranslatePopover sourceLang={translateLang} containerRef={spreadRef} />}
       </div>
+
+      {translateLang && (
+        <p className="text-[11px] sm:text-xs text-muted-foreground text-center -mt-2">
+          💡 حدّد أي كلمة أو جملة لترجمتها إلى العربية
+        </p>
+      )}
 
       <div className="flex items-center gap-3 sm:gap-6 w-full justify-center">
         <Button
