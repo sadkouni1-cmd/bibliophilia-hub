@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Languages, Loader2, X, Volume2 } from "lucide-react";
+import { Languages, Loader2, X, Volume2, BookOpen } from "lucide-react";
 
 type Pos = { x: number; y: number };
 
@@ -8,37 +8,79 @@ interface Props {
   containerRef: React.RefObject<HTMLElement>;
 }
 
+interface DictEntry {
+  pos: string; // part of speech, e.g. "noun"
+  terms: string[]; // arabic equivalents
+}
+
+interface Result {
+  primary: string; // main translation
+  isSingleWord: boolean;
+  dictionary: DictEntry[]; // only for single words
+}
+
 interface State {
   text: string;
   pos: Pos;
   loading: boolean;
-  translation: string | null;
+  result: Result | null;
   error: string | null;
 }
 
-const cache = new Map<string, string>();
+const cache = new Map<string, Result>();
 
-async function translateToArabic(text: string, source: string): Promise<string> {
-  const key = `${source}::${text}`;
+function isSingleWord(text: string): boolean {
+  // single word = no whitespace, length <= 40, has at least one letter
+  return /^[\p{L}\p{M}'’\-]+$/u.test(text) && text.length <= 40;
+}
+
+async function translate(text: string, source: string): Promise<Result> {
+  const single = isSingleWord(text);
+  const key = `${source}::${single ? "w" : "s"}::${text}`;
   if (cache.has(key)) return cache.get(key)!;
 
-  // Free Google Translate public endpoint (no key required)
+  // dt=t : translation, dt=bd : dictionary (synonyms for single words)
+  const dtParams = single ? "&dt=t&dt=bd" : "&dt=t";
   const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${encodeURIComponent(
     source
-  )}&tl=ar&dt=t&q=${encodeURIComponent(text)}`;
+  )}&tl=ar${dtParams}&q=${encodeURIComponent(text)}`;
 
   const res = await fetch(url);
   if (!res.ok) throw new Error("translate_failed");
   const data = await res.json();
-  // data[0] is array of [translatedChunk, originalChunk, ...]
-  const out = (data?.[0] ?? [])
+
+  const primary = (data?.[0] ?? [])
     .map((seg: any[]) => seg?.[0] ?? "")
     .join("")
     .trim();
-  if (!out) throw new Error("empty");
-  cache.set(key, out);
-  return out;
+
+  const dictionary: DictEntry[] = [];
+  if (single && Array.isArray(data?.[1])) {
+    for (const block of data[1]) {
+      const pos = block?.[0] ?? "";
+      const terms: string[] = Array.isArray(block?.[1]) ? block[1].slice(0, 6) : [];
+      if (terms.length) dictionary.push({ pos, terms });
+    }
+  }
+
+  if (!primary) throw new Error("empty");
+
+  const result: Result = { primary, isSingleWord: single, dictionary };
+  cache.set(key, result);
+  return result;
 }
+
+const POS_LABEL_AR: Record<string, string> = {
+  noun: "اسم",
+  verb: "فعل",
+  adjective: "صفة",
+  adverb: "ظرف",
+  pronoun: "ضمير",
+  preposition: "حرف جر",
+  conjunction: "حرف عطف",
+  interjection: "تعجب",
+  abbreviation: "اختصار",
+};
 
 export const TranslatePopover = ({ sourceLang, containerRef }: Props) => {
   const [state, setState] = useState<State | null>(null);
@@ -48,8 +90,8 @@ export const TranslatePopover = ({ sourceLang, containerRef }: Props) => {
     const el = containerRef.current;
     if (!el) return;
 
-    const handleUp = () => {
-      // small delay so selection is finalized
+    const handleSelection = () => {
+      // small delay so selection is finalized (esp. on touch devices)
       setTimeout(() => {
         const sel = window.getSelection();
         if (!sel || sel.isCollapsed) return;
@@ -68,11 +110,11 @@ export const TranslatePopover = ({ sourceLang, containerRef }: Props) => {
           y: rect.top, // viewport coords; we use position: fixed
         };
 
-        setState({ text, pos, loading: true, translation: null, error: null });
+        setState({ text, pos, loading: true, result: null, error: null });
 
-        translateToArabic(text, sourceLang)
-          .then((tr) =>
-            setState((s) => (s && s.text === text ? { ...s, loading: false, translation: tr } : s))
+        translate(text, sourceLang)
+          .then((result) =>
+            setState((s) => (s && s.text === text ? { ...s, loading: false, result } : s))
           )
           .catch(() =>
             setState((s) =>
@@ -81,34 +123,37 @@ export const TranslatePopover = ({ sourceLang, containerRef }: Props) => {
                 : s
             )
           );
-      }, 10);
+      }, 30);
     };
 
-    const handleDocDown = (e: MouseEvent) => {
+    const handleDocDown = (e: MouseEvent | TouchEvent) => {
       if (popRef.current && popRef.current.contains(e.target as Node)) return;
-      // closing only if clicking outside popover
       const sel = window.getSelection();
       if (!sel || sel.isCollapsed) {
         setState(null);
       }
     };
 
-    el.addEventListener("mouseup", handleUp);
-    el.addEventListener("touchend", handleUp);
+    el.addEventListener("mouseup", handleSelection);
+    el.addEventListener("touchend", handleSelection);
     document.addEventListener("mousedown", handleDocDown);
+    document.addEventListener("touchstart", handleDocDown, { passive: true });
     return () => {
-      el.removeEventListener("mouseup", handleUp);
-      el.removeEventListener("touchend", handleUp);
+      el.removeEventListener("mouseup", handleSelection);
+      el.removeEventListener("touchend", handleSelection);
       document.removeEventListener("mousedown", handleDocDown);
+      document.removeEventListener("touchstart", handleDocDown);
     };
   }, [containerRef, sourceLang]);
 
   if (!state) return null;
 
   // clamp horizontal position
-  const maxLeft = typeof window !== "undefined" ? window.innerWidth - 180 : state.pos.x;
-  const left = Math.max(20, Math.min(state.pos.x, maxLeft));
-  const top = Math.max(60, state.pos.y - 12);
+  const popWidth = 280;
+  const maxLeft = typeof window !== "undefined" ? window.innerWidth - popWidth / 2 - 12 : state.pos.x;
+  const minLeft = popWidth / 2 + 12;
+  const left = Math.max(minLeft, Math.min(state.pos.x, maxLeft));
+  const top = Math.max(70, state.pos.y - 12);
 
   const speak = () => {
     try {
@@ -120,18 +165,24 @@ export const TranslatePopover = ({ sourceLang, containerRef }: Props) => {
     }
   };
 
+  const single = state.result?.isSingleWord ?? isSingleWord(state.text);
+
   return (
     <div
       ref={popRef}
       className="fixed z-50 -translate-x-1/2 -translate-y-full animate-fade-up"
-      style={{ left, top }}
+      style={{ left, top, maxWidth: `${popWidth}px` }}
       dir="rtl"
     >
-      <div className="bg-card border border-border/70 shadow-book rounded-xl px-3 py-2 min-w-[220px] max-w-[300px] font-arabic">
+      <div className="bg-card border border-border/70 shadow-book rounded-xl px-3 py-2 min-w-[240px] max-w-[300px] font-arabic">
         <div className="flex items-center justify-between gap-2 border-b border-border/50 pb-1.5 mb-1.5">
           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-            <Languages className="h-3.5 w-3.5" />
-            <span>ترجمة عربية</span>
+            {single ? (
+              <BookOpen className="h-3.5 w-3.5" />
+            ) : (
+              <Languages className="h-3.5 w-3.5" />
+            )}
+            <span>{single ? "ترجمة الكلمة" : "ترجمة الجملة"}</span>
           </div>
           <div className="flex items-center gap-1">
             <button
@@ -151,9 +202,11 @@ export const TranslatePopover = ({ sourceLang, containerRef }: Props) => {
             </button>
           </div>
         </div>
-        <div className="text-[11px] text-muted-foreground/80 mb-1 truncate" dir="ltr">
+
+        <div className="text-[12px] text-muted-foreground/80 mb-1.5 truncate" dir="ltr">
           {state.text}
         </div>
+
         {state.loading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground py-1">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -161,11 +214,37 @@ export const TranslatePopover = ({ sourceLang, containerRef }: Props) => {
           </div>
         ) : state.error ? (
           <div className="text-sm text-destructive">{state.error}</div>
-        ) : (
-          <div className="text-base text-primary font-semibold leading-snug">
-            {state.translation}
-          </div>
-        )}
+        ) : state.result ? (
+          <>
+            <div className="text-base text-primary font-semibold leading-snug">
+              {state.result.primary}
+            </div>
+
+            {state.result.isSingleWord && state.result.dictionary.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-border/40 space-y-1.5">
+                {state.result.dictionary.map((entry, i) => (
+                  <div key={i}>
+                    {entry.pos && (
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground/70 mb-0.5">
+                        {POS_LABEL_AR[entry.pos] ?? entry.pos}
+                      </div>
+                    )}
+                    <div className="flex flex-wrap gap-1">
+                      {entry.terms.map((t, j) => (
+                        <span
+                          key={j}
+                          className="text-[12px] bg-muted/60 text-foreground/90 px-1.5 py-0.5 rounded"
+                        >
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        ) : null}
       </div>
       <div className="w-2 h-2 bg-card border-l border-b border-border/70 rotate-[-45deg] mx-auto -mt-1" />
     </div>
