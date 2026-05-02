@@ -157,19 +157,128 @@ export const TranslatePopover = ({ sourceLang, containerRef }: Props) => {
       }, 30);
     };
 
-    const handleDocDown = (e: MouseEvent | TouchEvent) => {
-      if (popRef.current && popRef.current.contains(e.target as Node)) return;
-      const sel = window.getSelection();
-      if (!sel || sel.isCollapsed) {
-        setState(null);
-      }
+    // Run translation for an arbitrary text + position (used by both selection & tap)
+    const runTranslate = (text: string, pos: Pos) => {
+      setState({ text, pos, loading: true, result: null, error: null });
+      translate(text, sourceLang)
+        .then((result) =>
+          setState((s) => (s && s.text === text ? { ...s, loading: false, result } : s))
+        )
+        .catch((err) =>
+          setState((s) =>
+            s && s.text === text
+              ? {
+                  ...s,
+                  loading: false,
+                  error:
+                    err?.message === "offline"
+                      ? "أنت غير متصل بالإنترنت — هذه الكلمة لم تُترجم سابقًا."
+                      : "تعذر الترجمة، حاول مرة أخرى.",
+                }
+              : s
+          )
+        );
     };
 
+    // Find the word at a given client (x,y) inside the container.
+    const wordAtPoint = (x: number, y: number): { word: string; rect: DOMRect } | null => {
+      const doc: any = document;
+      let range: Range | null = null;
+      if (typeof doc.caretRangeFromPoint === "function") {
+        range = doc.caretRangeFromPoint(x, y);
+      } else if (typeof doc.caretPositionFromPoint === "function") {
+        const p = doc.caretPositionFromPoint(x, y);
+        if (p && p.offsetNode) {
+          range = document.createRange();
+          range.setStart(p.offsetNode, p.offset);
+          range.setEnd(p.offsetNode, p.offset);
+        }
+      }
+      if (!range) return null;
+      const node = range.startContainer;
+      if (!node || node.nodeType !== Node.TEXT_NODE) return null;
+      const text = node.textContent || "";
+      const offset = range.startOffset;
+      // Word boundary regex (unicode letters, marks, apostrophe, hyphen)
+      const wordChar = /[\p{L}\p{M}'’\-]/u;
+      let start = offset;
+      let end = offset;
+      while (start > 0 && wordChar.test(text[start - 1])) start--;
+      while (end < text.length && wordChar.test(text[end])) end++;
+      if (start === end) return null;
+      const word = text.slice(start, end).trim();
+      if (!word || !isSingleWord(word)) return null;
+      const wordRange = document.createRange();
+      wordRange.setStart(node, start);
+      wordRange.setEnd(node, end);
+      const rect = wordRange.getBoundingClientRect();
+      return { word, rect };
+    };
+
+    const handleTap = (e: MouseEvent | TouchEvent) => {
+      // Ignore if user is selecting text
+      const sel = window.getSelection();
+      if (sel && !sel.isCollapsed && sel.toString().trim().length > 0) return;
+      // Ignore taps inside the popover itself
+      if (popRef.current && popRef.current.contains(e.target as Node)) return;
+
+      let x: number, y: number;
+      if ("touches" in e) {
+        const t = e.changedTouches[0] ?? e.touches[0];
+        if (!t) return;
+        x = t.clientX;
+        y = t.clientY;
+      } else {
+        x = e.clientX;
+        y = e.clientY;
+      }
+      const hit = wordAtPoint(x, y);
+      if (!hit) {
+        // tap on empty area → close any open popover
+        setState(null);
+        return;
+      }
+      runTranslate(hit.word, {
+        x: hit.rect.left + hit.rect.width / 2,
+        y: hit.rect.top,
+      });
+    };
+
+    const handleSelection = () => {
+      // small delay so selection is finalized (esp. on touch devices)
+      setTimeout(() => {
+        const sel = window.getSelection();
+        if (!sel || sel.isCollapsed) return;
+        const text = sel.toString().trim();
+        // only handle multi-word selections here; single words handled by tap
+        if (!text || text.length > 200 || isSingleWord(text)) return;
+        const anchor = sel.anchorNode;
+        if (!anchor || !el.contains(anchor)) return;
+
+        const range = sel.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        if (!rect || (rect.width === 0 && rect.height === 0)) return;
+
+        runTranslate(text, {
+          x: rect.left + rect.width / 2,
+          y: rect.top,
+        });
+      }, 30);
+    };
+
+    const handleDocDown = (e: MouseEvent | TouchEvent) => {
+      if (popRef.current && popRef.current.contains(e.target as Node)) return;
+      if (el.contains(e.target as Node)) return; // taps inside reader handled by handleTap
+      setState(null);
+    };
+
+    el.addEventListener("click", handleTap as EventListener);
     el.addEventListener("mouseup", handleSelection);
     el.addEventListener("touchend", handleSelection);
     document.addEventListener("mousedown", handleDocDown);
     document.addEventListener("touchstart", handleDocDown, { passive: true });
     return () => {
+      el.removeEventListener("click", handleTap as EventListener);
       el.removeEventListener("mouseup", handleSelection);
       el.removeEventListener("touchend", handleSelection);
       document.removeEventListener("mousedown", handleDocDown);
