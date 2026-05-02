@@ -27,7 +27,33 @@ interface State {
   error: string | null;
 }
 
-const cache = new Map<string, Result>();
+const CACHE_STORAGE_KEY = "rwb-translate-cache-v1";
+
+function loadCache(): Map<string, Result> {
+  if (typeof window === "undefined") return new Map();
+  try {
+    const raw = window.localStorage.getItem(CACHE_STORAGE_KEY);
+    if (!raw) return new Map();
+    const obj = JSON.parse(raw) as Record<string, Result>;
+    return new Map(Object.entries(obj));
+  } catch {
+    return new Map();
+  }
+}
+
+const cache: Map<string, Result> = loadCache();
+
+function persistCache() {
+  if (typeof window === "undefined") return;
+  try {
+    // cap at ~500 entries to avoid bloat
+    const entries = Array.from(cache.entries()).slice(-500);
+    const obj = Object.fromEntries(entries);
+    window.localStorage.setItem(CACHE_STORAGE_KEY, JSON.stringify(obj));
+  } catch {
+    /* ignore quota errors */
+  }
+}
 
 function isSingleWord(text: string): boolean {
   // single word = no whitespace, length <= 40, has at least one letter
@@ -38,6 +64,10 @@ async function translate(text: string, source: string): Promise<Result> {
   const single = isSingleWord(text);
   const key = `${source}::${single ? "w" : "s"}::${text}`;
   if (cache.has(key)) return cache.get(key)!;
+
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    throw new Error("offline");
+  }
 
   // dt=t : translation, dt=bd : dictionary (synonyms for single words)
   const dtParams = single ? "&dt=t&dt=bd" : "&dt=t";
