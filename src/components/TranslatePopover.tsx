@@ -97,6 +97,7 @@ async function translate(text: string, source: string): Promise<Result> {
 
   const result: Result = { primary, isSingleWord: single, dictionary };
   cache.set(key, result);
+  persistCache();
   return result;
 }
 
