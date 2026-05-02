@@ -121,41 +121,6 @@ export const TranslatePopover = ({ sourceLang, containerRef }: Props) => {
     const el = containerRef.current;
     if (!el) return;
 
-    const handleSelection = () => {
-      // small delay so selection is finalized (esp. on touch devices)
-      setTimeout(() => {
-        const sel = window.getSelection();
-        if (!sel || sel.isCollapsed) return;
-        const text = sel.toString().trim();
-        if (!text || text.length > 200) return;
-        // Make sure selection is inside our container
-        const anchor = sel.anchorNode;
-        if (!anchor || !el.contains(anchor)) return;
-
-        const range = sel.getRangeAt(0);
-        const rect = range.getBoundingClientRect();
-        if (!rect || (rect.width === 0 && rect.height === 0)) return;
-
-        const pos = {
-          x: rect.left + rect.width / 2,
-          y: rect.top, // viewport coords; we use position: fixed
-        };
-
-        setState({ text, pos, loading: true, result: null, error: null });
-
-        translate(text, sourceLang)
-          .then((result) =>
-            setState((s) => (s && s.text === text ? { ...s, loading: false, result } : s))
-          )
-          .catch(() =>
-            setState((s) =>
-              s && s.text === text
-                ? { ...s, loading: false, error: "تعذر الترجمة، حاول مرة أخرى." }
-                : s
-            )
-          );
-      }, 30);
-    };
 
     // Run translation for an arbitrary text + position (used by both selection & tap)
     const runTranslate = (text: string, pos: Pos) => {
