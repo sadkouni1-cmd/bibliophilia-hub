@@ -167,7 +167,7 @@ export const BookReader = ({
 
       {translateLang && (
         <p className="text-[11px] sm:text-xs text-muted-foreground text-center -mt-2">
-          💡 حدّد أي كلمة أو جملة لترجمتها إلى العربية
+          💡 انقر على أي كلمة لترجمتها فورًا، أو حدّد جملة لترجمتها كاملة
         </p>
       )}
 
