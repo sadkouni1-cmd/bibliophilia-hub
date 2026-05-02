@@ -37,9 +37,9 @@ export function useAndroidBack() {
       try {
         // Dynamic import so the web build doesn't fail when the package
         // isn't installed yet.
-        const mod = await import(/* @vite-ignore */ "@capacitor/app").catch(
-          () => null as unknown as { App?: any } | null
-        );
+        const mod = (await import(
+          /* @vite-ignore */ /* webpackIgnore: true */ "@capacitor/app" as string
+        ).catch(() => null)) as { App?: any } | null;
         if (cancelled || !mod?.App) return;
 
         const sub = await mod.App.addListener("backButton", () => {
