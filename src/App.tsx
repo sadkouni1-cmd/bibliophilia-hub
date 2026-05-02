@@ -9,8 +9,23 @@ import MyBooks from "./pages/MyBooks.tsx";
 import AuthorDetail from "./pages/AuthorDetail.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { ScrollToTop } from "./components/ScrollToTop";
+import { useAndroidBack } from "./hooks/use-android-back";
 
 const queryClient = new QueryClient();
+
+const AppRoutes = () => {
+  useAndroidBack();
+  return (
+    <Routes>
+      <Route path="/" element={<Index />} />
+      <Route path="/book/:id" element={<BookDetail />} />
+      <Route path="/author/:name" element={<AuthorDetail />} />
+      <Route path="/my-books" element={<MyBooks />} />
+      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -18,14 +33,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/book/:id" element={<BookDetail />} />
-          <Route path="/author/:name" element={<AuthorDetail />} />
-          <Route path="/my-books" element={<MyBooks />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AppRoutes />
         <ScrollToTop />
       </BrowserRouter>
     </TooltipProvider>
